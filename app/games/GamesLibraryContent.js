@@ -147,20 +147,26 @@ export default function GamesLibraryContent() {
 
         {/* Search Bar */}
         <div className="max-w-xl mx-auto relative mb-6">
-          <svg
-            className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-[#555]"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+          <div
+            className="absolute left-0 top-1/2 -translate-y-1/2 flex items-center pointer-events-none text-[#64748b]"
+            style={{ paddingLeft: '20px' }}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search games by title, genre, keyword..."
-            className="w-full bg-white/[0.04] border border-white/10 rounded-full py-3 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-[#2563eb] transition-all placeholder:text-[#555]"
+            style={{ paddingLeft: '56px' }}
+            className="w-full bg-white/[0.04] border border-white/10 rounded-full py-3 pr-5 text-sm text-white focus:outline-none focus:border-[#2563eb] focus:bg-white/[0.07] transition-all placeholder:text-[#64748b] font-sans"
           />
         </div>
 

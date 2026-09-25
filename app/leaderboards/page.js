@@ -83,6 +83,27 @@ export default function LeaderboardsPage() {
     <div className="pt-24 pb-20 px-4 sm:px-6 max-w-7xl mx-auto relative">
       <div className="fixed inset-0 scanline-overlay z-10 opacity-10 pointer-events-none"></div>
 
+      {/* ===== UPCOMING NOTICE BANNER ===== */}
+      <div className="mb-8 p-4 rounded-2xl bg-[#0e1320] border border-[#2563eb]/30 shadow-[0_0_25px_rgba(37,99,235,0.15)] flex flex-col sm:flex-row items-center justify-between gap-4 relative z-20">
+        <div className="flex items-center gap-3 text-center sm:text-left">
+          <div className="w-9 h-9 rounded-xl bg-[#2563eb]/20 flex items-center justify-center text-[#3b82f6] flex-shrink-0">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white">Leaderboards is Under Development</p>
+            <p className="text-xs text-[#94a3b8]">Live competitive rankings will launch in an upcoming release. Preview the mock interface below.</p>
+          </div>
+        </div>
+        <a
+          href="/games"
+          className="px-4 py-2 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs font-semibold whitespace-nowrap transition-colors flex-shrink-0"
+        >
+          Play Games
+        </a>
+      </div>
+
       {/* ===== HEADER & PERIOD FILTERS ===== */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6 relative z-20">
         <div>

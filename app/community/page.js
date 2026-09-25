@@ -57,6 +57,27 @@ export default function CommunityPage() {
 
   return (
     <div className="pt-24 pb-20 px-4 sm:px-6 max-w-7xl mx-auto">
+      {/* ===== UPCOMING NOTICE BANNER ===== */}
+      <div className="mb-8 p-4 rounded-2xl bg-[#0e1320] border border-[#2563eb]/30 shadow-[0_0_25px_rgba(37,99,235,0.15)] flex flex-col sm:flex-row items-center justify-between gap-4 relative z-20">
+        <div className="flex items-center gap-3 text-center sm:text-left">
+          <div className="w-9 h-9 rounded-xl bg-[#2563eb]/20 flex items-center justify-center text-[#3b82f6] flex-shrink-0">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white">Community Hub is Under Development</p>
+            <p className="text-xs text-[#94a3b8]">Forums, player chat, and tournament registration are coming in the next platform update.</p>
+          </div>
+        </div>
+        <a
+          href="/games"
+          className="px-4 py-2 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs font-semibold whitespace-nowrap transition-colors flex-shrink-0"
+        >
+          Play Games
+        </a>
+      </div>
+
       {/* ===== HERO & SEARCH ===== */}
       <section className="flex flex-col gap-6 mb-10 relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-[#3b82f6]/10 rounded-full blur-[120px] pointer-events-none"></div>

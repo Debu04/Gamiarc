@@ -3,15 +3,9 @@
 import Link from 'next/link';
 
 export default function GameCard({ game, variant = 'standard' }) {
-  const isAvailable = game.status === 'published';
+  // Only Neon Tic-Tac-Toe is currently published & playable
+  const isAvailable = game.id === 'tic-tac-toe' && game.status === 'published';
   const playUrl = isAvailable ? game.route : '#';
-
-  const handlePlayClick = (e) => {
-    if (!isAvailable) {
-      e.preventDefault();
-      alert(`Launching ${game.name}... (Coming Soon)`);
-    }
-  };
 
   const accentColor = game.accentColor || '#3b82f6';
 
@@ -82,27 +76,36 @@ export default function GameCard({ game, variant = 'standard' }) {
             {game.subgenre || game.description}
           </p>
           <div className="mt-auto">
-            <Link
-              href={playUrl}
-              onClick={handlePlayClick}
-              className="btn-play block w-full py-2 text-center text-xs font-semibold rounded-xl transition-all"
-              style={{
-                backgroundColor: `${accentColor}18`,
-                borderColor: `${accentColor}35`,
-                borderWidth: '1px',
-                borderStyle: 'solid',
-                color: accentColor,
-              }}
-            >
-              Play Free
-            </Link>
+            {isAvailable ? (
+              <Link
+                href={playUrl}
+                className="btn-play block w-full py-2 text-center text-xs font-semibold rounded-xl transition-all"
+                style={{
+                  backgroundColor: `${accentColor}18`,
+                  borderColor: `${accentColor}35`,
+                  borderWidth: '1px',
+                  borderStyle: 'solid',
+                  color: accentColor,
+                }}
+              >
+                Play Free
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="block w-full py-2 text-center text-xs font-semibold rounded-xl bg-white/[0.03] border border-white/[0.06] text-[#64748b] cursor-not-allowed select-none transition-all"
+              >
+                Under Development
+              </button>
+            )}
           </div>
         </div>
       </article>
     );
   }
 
-  // Standard Variant (matches index.html)
+  // Standard Variant (matches homepage)
   return (
     <article className="game-card rounded-2xl overflow-hidden group">
       <div className="h-44 overflow-hidden relative">
@@ -126,20 +129,29 @@ export default function GameCard({ game, variant = 'standard' }) {
         </span>
         <h3 className="text-base font-bold text-white mt-1 mb-1">{game.name}</h3>
         <p className="text-[#64748b] text-xs mb-4 leading-relaxed">{game.description}</p>
-        <Link
-          href={playUrl}
-          onClick={handlePlayClick}
-          className="btn-play block w-full py-2.5 text-center text-xs font-semibold rounded-xl transition-all"
-          style={{
-            backgroundColor: `${accentColor}26`,
-            borderColor: `${accentColor}40`,
-            borderWidth: '1px',
-            borderStyle: 'solid',
-            color: accentColor,
-          }}
-        >
-          Play Free
-        </Link>
+        {isAvailable ? (
+          <Link
+            href={playUrl}
+            className="btn-play block w-full py-2.5 text-center text-xs font-semibold rounded-xl transition-all"
+            style={{
+              backgroundColor: `${accentColor}26`,
+              borderColor: `${accentColor}40`,
+              borderWidth: '1px',
+              borderStyle: 'solid',
+              color: accentColor,
+            }}
+          >
+            Play Free
+          </Link>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className="block w-full py-2.5 text-center text-xs font-semibold rounded-xl bg-white/[0.03] border border-white/[0.06] text-[#64748b] cursor-not-allowed select-none transition-all"
+          >
+            Under Development
+          </button>
+        )}
       </div>
     </article>
   );
