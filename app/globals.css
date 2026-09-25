@@ -650,20 +650,82 @@ img {
 /* LG: >= 1024px */
 @media (min-width: 1024px) {
   .lg\:flex { display: flex !important; }
+  .lg\:flex-row { flex-direction: row !important; }
+  .lg\:flex-col { flex-direction: column !important; }
   .lg\:block { display: block !important; }
   .lg\:grid { display: grid !important; }
   .lg\:hidden { display: none !important; }
+  .lg\:w-56 { width: 14rem !important; }
+  .lg\:w-60 { width: 15rem !important; }
+  .lg\:w-64 { width: 16rem !important; }
+  .lg\:gap-6 { gap: 1.5rem !important; }
+  .lg\:gap-8 { gap: 2rem !important; }
   .lg\:col-span-1 { grid-column: span 1 / span 1; }
   .lg\:col-span-8 { grid-column: span 8 / span 8; }
   .lg\:col-span-4 { grid-column: span 4 / span 4; }
-  .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .lg\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
   .lg\:text-7xl { font-size: 4.5rem; line-height: 1.05; }
+}
+
+/* Sidebar Custom Classes */
+.sidebar-category-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  border-radius: 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #64748b;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  text-align: left;
+  cursor: pointer;
+}
+.sidebar-category-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+}
+.sidebar-category-btn.active {
+  color: #ffffff;
+  background: #111d33;
+  border-color: rgba(37, 99, 235, 0.4);
+  font-weight: 600;
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.15);
+}
+
+.sidebar-sort-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0.65rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #64748b;
+  background: transparent;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  text-align: left;
+  cursor: pointer;
+}
+.sidebar-sort-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+}
+.sidebar-sort-btn.active {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 /* XL: >= 1280px */
 @media (min-width: 1280px) {
-  .xl\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .xl\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
 }
 
 /* Safe Area Padding for Mobile Bottom Bar */
