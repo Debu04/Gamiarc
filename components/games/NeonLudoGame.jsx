@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 // ============================================================
 // LUDO CONSTANTS & 2–7 PLAYER ENGINE
@@ -20,60 +20,66 @@ const PLAYER_DEFS = {
 const STARTS_4 = { red: 0, blue: 13, yellow: 26, green: 39 };
 const SAFE_CELLS_4 = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
 
-// 6/7-Player Starts & Safe Cells (72 track cells)
-const STARTS_6 = { red: 0, orange: 12, yellow: 24, green: 36, cyan: 48, purple: 60, blue: 12 };
-const SAFE_CELLS_6 = new Set([0, 8, 12, 20, 24, 32, 36, 44, 48, 56, 60, 68]);
-
-const MAX_PROGRESS = 57;
-const HOME_STRETCH_START = 52;
-
 function rollDie() {
   return Math.floor(Math.random() * 6) + 1;
 }
 
-function getTrackStart(playerId, is6Player) {
-  if (is6Player) {
-    return STARTS_6[playerId] ?? 0;
+function getHomeStretchStart(playerCount) {
+  return playerCount >= 5 ? playerCount * 12 : 52;
+}
+
+function getMaxProgress(playerCount) {
+  return playerCount >= 5 ? playerCount * 12 + 5 : 57;
+}
+
+function getTotalTrackCells(playerCount) {
+  return playerCount >= 5 ? playerCount * 12 : 52;
+}
+
+function getSafeCellsSet(playerCount) {
+  if (playerCount < 5) return SAFE_CELLS_4;
+  const safe = new Set();
+  for (let i = 0; i < playerCount; i++) {
+    safe.add(i * 12);     // Start cell outside base
+    safe.add(i * 12 + 8); // Outward corridor safe star
   }
-  return STARTS_4[playerId] ?? 0;
+  return safe;
 }
 
-function getTotalTrackCells(is6Player) {
-  return is6Player ? 72 : 52;
+function getAbsoluteTrackPos(playerId, progress, playerCount, playerIndex = 0) {
+  const homeStart = getHomeStretchStart(playerCount);
+  if (progress < 0 || progress >= homeStart) return null;
+  if (playerCount < 5) {
+    const start = STARTS_4[playerId] ?? 0;
+    return (start + progress) % 52;
+  }
+  const total = playerCount * 12;
+  return (playerIndex * 12 + progress) % total;
 }
 
-function getSafeCellsSet(is6Player) {
-  return is6Player ? SAFE_CELLS_6 : SAFE_CELLS_4;
-}
-
-function getAbsoluteTrackPos(playerId, progress, is6Player) {
-  if (progress < 0 || progress >= HOME_STRETCH_START) return null;
-  const total = getTotalTrackCells(is6Player);
-  const start = getTrackStart(playerId, is6Player);
-  return (start + progress) % total;
-}
-
-function getMovableTokens(player, roll) {
+function getMovableTokens(player, roll, playerCount) {
+  const maxProg = getMaxProgress(playerCount);
   return player.tokens.reduce((acc, token, i) => {
-    if (token.progress === MAX_PROGRESS) return acc;
+    if (token.progress === maxProg) return acc;
     if (token.progress === -1) {
       if (roll === 6) acc.push(i);
       return acc;
     }
     const next = token.progress + roll;
-    if (next <= MAX_PROGRESS) acc.push(i);
+    if (next <= maxProg) acc.push(i);
     return acc;
   }, []);
 }
 
-function findCapturableTokens(players, moverId, absolutePos, is6Player) {
+function findCapturableTokens(players, moverId, moverIndex, absolutePos, playerCount) {
   if (absolutePos === null) return [];
+  const homeStart = getHomeStretchStart(playerCount);
   const captured = [];
-  players.forEach(p => {
+  players.forEach((p, pIdx) => {
     if (p.id === moverId) return;
     p.tokens.forEach((t, ti) => {
-      if (t.progress < 0 || t.progress >= HOME_STRETCH_START) return;
-      const absPos = getAbsoluteTrackPos(p.id, t.progress, is6Player);
+      if (t.progress < 0 || t.progress >= homeStart) return;
+      const absPos = getAbsoluteTrackPos(p.id, t.progress, playerCount, pIdx);
       if (absPos === absolutePos) {
         captured.push({ playerId: p.id, tokenIndex: ti });
       }
@@ -86,14 +92,16 @@ function findCapturableTokens(players, moverId, absolutePos, is6Player) {
 // AI STRATEGY HEURISTICS (Unrigged & Progressive)
 // ============================================================
 
-function scoreMove(player, tokenIndex, roll, players, difficulty, is6Player) {
+function scoreMove(player, playerIndex, tokenIndex, roll, players, difficulty, playerCount) {
   const token = player.tokens[tokenIndex];
   const prevProgress = token.progress;
   const nextProgress = prevProgress === -1 ? 0 : prevProgress + roll;
-  const safeSet = getSafeCellsSet(is6Player);
+  const maxProg = getMaxProgress(playerCount);
+  const homeStart = getHomeStretchStart(playerCount);
+  const safeSet = getSafeCellsSet(playerCount);
 
   // 1. Reaching home goal
-  if (nextProgress === MAX_PROGRESS) {
+  if (nextProgress === maxProg) {
     if (difficulty === 'easy') return 50;
     if (difficulty === 'normal') return 200;
     return 1000;
@@ -110,17 +118,17 @@ function scoreMove(player, tokenIndex, roll, players, difficulty, is6Player) {
   }
 
   // 3. Entering home stretch
-  if (prevProgress < HOME_STRETCH_START && nextProgress >= HOME_STRETCH_START) {
+  if (prevProgress < homeStart && nextProgress >= homeStart) {
     if (difficulty === 'easy') score += 15;
     else if (difficulty === 'normal') score += 40;
     else score += 100;
   }
 
   // 4. Capturing opponent tokens
-  if (nextProgress >= 0 && nextProgress < HOME_STRETCH_START) {
-    const absLandingPos = getAbsoluteTrackPos(player.id, nextProgress, is6Player);
+  if (nextProgress >= 0 && nextProgress < homeStart) {
+    const absLandingPos = getAbsoluteTrackPos(player.id, nextProgress, playerCount, playerIndex);
     if (!safeSet.has(absLandingPos)) {
-      const capturables = findCapturableTokens(players, player.id, absLandingPos, is6Player);
+      const capturables = findCapturableTokens(players, player.id, playerIndex, absLandingPos, playerCount);
       if (capturables.length > 0) {
         if (difficulty === 'easy') score += 20;
         else if (difficulty === 'normal') score += 60 * capturables.length;
@@ -135,16 +143,16 @@ function scoreMove(player, tokenIndex, roll, players, difficulty, is6Player) {
 
   // 5. Threat avoidance (Hard & Expert)
   if (difficulty === 'hard' || difficulty === 'expert') {
-    const totalCells = getTotalTrackCells(is6Player);
-    if (prevProgress >= 0 && prevProgress < HOME_STRETCH_START) {
-      const currentAbsPos = getAbsoluteTrackPos(player.id, prevProgress, is6Player);
+    const totalCells = getTotalTrackCells(playerCount);
+    if (prevProgress >= 0 && prevProgress < homeStart) {
+      const currentAbsPos = getAbsoluteTrackPos(player.id, prevProgress, playerCount, playerIndex);
       if (!safeSet.has(currentAbsPos)) {
         let inDanger = false;
-        players.forEach(p => {
+        players.forEach((p, pIdx) => {
           if (p.id === player.id) return;
           p.tokens.forEach(enemyToken => {
-            if (enemyToken.progress >= 0 && enemyToken.progress < HOME_STRETCH_START) {
-              const enemyAbs = getAbsoluteTrackPos(p.id, enemyToken.progress, is6Player);
+            if (enemyToken.progress >= 0 && enemyToken.progress < homeStart) {
+              const enemyAbs = getAbsoluteTrackPos(p.id, enemyToken.progress, playerCount, pIdx);
               const dist = (currentAbsPos - enemyAbs + totalCells) % totalCells;
               if (dist >= 1 && dist <= 6) inDanger = true;
             }
@@ -154,15 +162,15 @@ function scoreMove(player, tokenIndex, roll, players, difficulty, is6Player) {
       }
     }
 
-    if (nextProgress >= 0 && nextProgress < HOME_STRETCH_START) {
-      const landingAbsPos = getAbsoluteTrackPos(player.id, nextProgress, is6Player);
+    if (nextProgress >= 0 && nextProgress < homeStart) {
+      const landingAbsPos = getAbsoluteTrackPos(player.id, nextProgress, playerCount, playerIndex);
       if (!safeSet.has(landingAbsPos)) {
         let landingInDanger = false;
-        players.forEach(p => {
+        players.forEach((p, pIdx) => {
           if (p.id === player.id) return;
           p.tokens.forEach(enemyToken => {
-            if (enemyToken.progress >= 0 && enemyToken.progress < HOME_STRETCH_START) {
-              const enemyAbs = getAbsoluteTrackPos(p.id, enemyToken.progress, is6Player);
+            if (enemyToken.progress >= 0 && enemyToken.progress < homeStart) {
+              const enemyAbs = getAbsoluteTrackPos(p.id, enemyToken.progress, playerCount, pIdx);
               const dist = (landingAbsPos - enemyAbs + totalCells) % totalCells;
               if (dist >= 1 && dist <= 6) landingInDanger = true;
             }
@@ -176,7 +184,7 @@ function scoreMove(player, tokenIndex, roll, players, difficulty, is6Player) {
   return score;
 }
 
-function chooseBotMove(player, roll, movableIndexes, players, difficulty, is6Player) {
+function chooseBotMove(player, playerIndex, roll, movableIndexes, players, difficulty, playerCount) {
   if (difficulty === 'easy') {
     const shuffled = [...movableIndexes].sort(() => Math.random() - 0.5);
     return shuffled[0];
@@ -185,7 +193,7 @@ function chooseBotMove(player, roll, movableIndexes, players, difficulty, is6Pla
   let best = movableIndexes[0];
   let bestScore = -Infinity;
   for (const i of movableIndexes) {
-    const s = scoreMove(player, i, roll, players, difficulty, is6Player);
+    const s = scoreMove(player, playerIndex, i, roll, players, difficulty, playerCount);
     if (s > bestScore) {
       bestScore = s;
       best = i;
@@ -230,81 +238,71 @@ const BASE_POSITIONS_4 = {
 };
 
 // ============================================================
-// 6/7-PLAYER LUDO KING STYLE BOARD GEOMETRY (Square-Cell Arms)
+// 5, 6, 7-PLAYER LUDO KING STYLE BOARD GEOMETRY (Polygonal Corridors)
 // ============================================================
 
-const HEX_ANGLES = [
-  -Math.PI / 2,                  // 0: Red (Top)
-  -Math.PI / 2 + Math.PI / 3,     // 1: Orange (Top-Right)
-  -Math.PI / 2 + 2 * Math.PI / 3, // 2: Yellow (Bottom-Right)
-  -Math.PI / 2 + Math.PI,         // 3: Green (Bottom)
-  -Math.PI / 2 + 4 * Math.PI / 3, // 4: Cyan (Bottom-Left)
-  -Math.PI / 2 + 5 * Math.PI / 3, // 5: Purple (Top-Left)
-];
-
-const HEX_ORDER = ['red', 'orange', 'yellow', 'green', 'cyan', 'purple'];
-
-function buildHexTrack() {
-  const cells = [];
-  for (let i = 0; i < 6; i++) {
-    const ang = HEX_ANGLES[i];
-    const uX = Math.cos(ang), uY = Math.sin(ang);
-    const vX = -Math.sin(ang), vY = Math.cos(ang);
-
-    // 5 square cells outward along left lane (offset -22*v)
-    const radiiOut = [65, 100, 135, 170, 205];
-    radiiOut.forEach(r => {
-      cells.push({ x: 300 + r * uX - 22 * vX, y: 300 + r * uY - 22 * vY, ang });
-    });
-
-    // 2 outer corner cells around base
-    cells.push({ x: 300 + 242 * uX - 14 * vX, y: 300 + 242 * uY - 14 * vY, ang });
-    cells.push({ x: 300 + 242 * uX + 14 * vX, y: 300 + 242 * uY + 14 * vY, ang });
-
-    // 5 square cells inward along right lane (offset +22*v)
-    const radiiIn = [205, 170, 135, 100, 65];
-    radiiIn.forEach(r => {
-      cells.push({ x: 300 + r * uX + 22 * vX, y: 300 + r * uY + 22 * vY, ang });
-    });
+function buildMultiBoardGeometry(numPlayers) {
+  const angles = [];
+  for (let i = 0; i < numPlayers; i++) {
+    angles.push(-Math.PI / 2 + i * (2 * Math.PI / numPlayers));
   }
-  return cells;
-}
+  const track = [];
+  const homeLanes = [];
+  const bases = [];
+  const X0 = 360, Y0 = 360;
+  const d = 26; // corridor offset
+  const radii = [100, 130, 160, 190, 220]; // 5 cell radii
 
-const TRACK_6 = buildHexTrack();
-
-function buildHexHomeLanes() {
-  const lanes = {};
-  HEX_ORDER.forEach((pid, i) => {
-    const ang = HEX_ANGLES[i];
-    const uX = Math.cos(ang), uY = Math.sin(ang);
-    const radii = [205, 170, 135, 100, 65];
-    lanes[pid] = radii.map(r => ({ x: 300 + r * uX, y: 300 + r * uY, ang }));
-  });
-  return lanes;
-}
-
-const HOME_LANES_6 = buildHexHomeLanes();
-
-function buildHexBases() {
-  const bases = {};
-  HEX_ORDER.forEach((pid, i) => {
-    const ang = HEX_ANGLES[i];
+  for (let i = 0; i < numPlayers; i++) {
+    const ang = angles[i];
     const uX = Math.cos(ang), uY = Math.sin(ang);
     const vX = -Math.sin(ang), vY = Math.cos(ang);
-    const bCX = 300 + 245 * uX;
-    const bCY = 300 + 245 * uY;
 
-    bases[pid] = [
-      { x: bCX - 15 * vX - 14 * uX, y: bCY - 15 * vY - 14 * uY },
-      { x: bCX + 15 * vX - 14 * uX, y: bCY + 15 * vY - 14 * uY },
-      { x: bCX - 15 * vX + 14 * uX, y: bCY - 15 * vY + 14 * uY },
-      { x: bCX + 15 * vX + 14 * uX, y: bCY + 15 * vY + 14 * uY },
-    ];
-  });
-  return bases;
+    // 1. Inward corridor (5 cells from outer to inner)
+    // Step 0 is at radius 220 (start cell right outside base i)
+    for (let k = 4; k >= 0; k--) {
+      const r = radii[k];
+      track.push({ x: X0 + r * uX - d * vX, y: Y0 + r * uY - d * vY, ang, arm: i, step: 4 - k });
+    }
+
+    // 2. Inner bridge cell between arm i and arm (i + 1) % numPlayers
+    const nextI = (i + 1) % numPlayers;
+    const midAng = ang + Math.PI / numPlayers;
+    track.push({ x: X0 + 82 * Math.cos(midAng), y: Y0 + 82 * Math.sin(midAng), ang: midAng, arm: i, step: 5 });
+
+    // 3. Outward corridor of arm i+1 (5 cells from inner to outer)
+    const nextAng = angles[nextI];
+    const nUx = Math.cos(nextAng), nUy = Math.sin(nextAng);
+    const nVx = -Math.sin(nextAng), nVy = Math.cos(nextAng);
+    for (let k = 0; k < 5; k++) {
+      const r = radii[k];
+      track.push({ x: X0 + r * nUx + d * nVx, y: Y0 + r * nUy + d * nVy, ang: nextAng, arm: nextI, step: 6 + k });
+    }
+
+    // 4. Outer bridge cell at arm i+1
+    track.push({ x: X0 + 248 * nUx, y: Y0 + 248 * nUy, ang: nextAng, arm: nextI, step: 11 });
+
+    // Home lane for arm i (5 cells from outer to inner)
+    const lane = [];
+    for (let k = 4; k >= 0; k--) {
+      const r = radii[k];
+      lane.push({ x: X0 + r * uX, y: Y0 + r * uY, ang });
+    }
+    homeLanes.push(lane);
+
+    // Base for arm i
+    const bCX = X0 + 295 * uX;
+    const bCY = Y0 + 295 * uY;
+    bases.push([
+      { x: bCX - 16 * uX - 16 * vX, y: bCY - 16 * uY - 16 * vY },
+      { x: bCX - 16 * uX + 16 * vX, y: bCY - 16 * uY + 16 * vY },
+      { x: bCX + 16 * uX - 16 * vX, y: bCY + 16 * uY - 16 * vY },
+      { x: bCX + 16 * uX + 16 * vX, y: bCY + 16 * uY + 16 * vY },
+    ]);
+  }
+
+  return { angles, track, homeLanes, bases };
 }
-
-const BASE_POSITIONS_6 = buildHexBases();
 
 const DIFFICULTIES = [
   { id: 'easy',   label: 'Easy',   desc: 'Casual moves' },
@@ -574,14 +572,13 @@ function Lobby({ onStart }) {
           type="button"
           className="nludo-start-btn"
           onClick={() => {
-            const is6Player = playerCount >= 5;
             const playersConfig = activeIds.map((pid, idx) => ({
               id: pid,
               label: PLAYER_DEFS[pid].label,
               isBot: !!slotIsBot[idx],
               difficulty,
             }));
-            onStart({ playersConfig, mode, difficulty, is6Player });
+            onStart({ playersConfig, mode, difficulty, playerCount });
           }}
         >
           <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
@@ -598,25 +595,26 @@ function Lobby({ onStart }) {
 // CONCISE HOW TO PLAY MODAL
 // ============================================================
 
-function HowToPlayModal({ onClose, is6Player }) {
+function HowToPlayModal({ onClose, playerCount }) {
+  const isMulti = playerCount >= 5;
   return (
     <div className="nludo-modal-backdrop" onClick={onClose} role="dialog" aria-modal="true" aria-label="Rules">
       <div className="nludo-modal-card" onClick={e => e.stopPropagation()}>
         <button className="nludo-modal-close" onClick={onClose} aria-label="Close">×</button>
-        <h3 className="nludo-modal-title">{is6Player ? '6–7 Player Board Rules' : 'Classic Ludo Rules'}</h3>
+        <h3 className="nludo-modal-title">{isMulti ? `${playerCount}-Player Board Rules` : 'Classic Ludo Rules'}</h3>
         <div className="nludo-rules">
           <div className="nludo-rule">
             <span className="nludo-rule-num">1</span>
             <div>
               <strong>Roll 6 to Enter</strong>
-              <p>Roll a 6 to move a token from base onto your starting track square.</p>
+              <p>Roll a 6 to move a token from base onto your starting track square right outside your yard.</p>
             </div>
           </div>
           <div className="nludo-rule">
             <span className="nludo-rule-num">2</span>
             <div>
               <strong>Clockwise Race</strong>
-              <p>Move tokens clockwise around the track according to dice rolls.</p>
+              <p>Move tokens clockwise around the corridor track according to dice rolls.</p>
             </div>
           </div>
           <div className="nludo-rule">
@@ -637,7 +635,7 @@ function HowToPlayModal({ onClose, is6Player }) {
             <span className="nludo-rule-num">5</span>
             <div>
               <strong>Exact Finishing Roll</strong>
-              <p>Tokens require an exact roll to enter the center nexus triangle.</p>
+              <p>Tokens require an exact roll to enter the central nexus triangle.</p>
             </div>
           </div>
         </div>
@@ -651,9 +649,10 @@ function HowToPlayModal({ onClose, is6Player }) {
 // VICTORY SCREEN
 // ============================================================
 
-function VictoryScreen({ winner, players, onPlayAgain, onNewGame }) {
-  const def = PLAYER_DEFS[winner.id];
+function VictoryScreen({ winner, players, playerCount, onPlayAgain, onNewGame }) {
+  const def = PLAYER_DEFS[winner.id] || PLAYER_DEFS.red;
   const maxTokens = winner.tokens.length;
+  const maxProg = getMaxProgress(playerCount);
 
   return (
     <div className="nludo-victory">
@@ -668,8 +667,8 @@ function VictoryScreen({ winner, players, onPlayAgain, onNewGame }) {
         </p>
         <div className="nludo-victory-standings">
           {players.map((p, idx) => {
-            const d = PLAYER_DEFS[p.id];
-            const done = p.tokens.filter(t => t.progress === MAX_PROGRESS).length;
+            const d = PLAYER_DEFS[p.id] || PLAYER_DEFS.red;
+            const done = p.tokens.filter(t => t.progress === maxProg).length;
             return (
               <div key={p.id} className="nludo-standing-row">
                 <span className="nludo-standing-pos">#{idx + 1}</span>
@@ -793,28 +792,30 @@ function TokenCircle({ pid, ti, cx, cy, r = 11, isMovable, onTokenClick }) {
 // 4-PLAYER SQUARE BOARD SVG
 // ============================================================
 
-function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick }) {
+function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick, playerCount }) {
   const VB = 15 * CELL_4;
+  const maxProg = getMaxProgress(playerCount);
+  const homeStart = getHomeStretchStart(playerCount);
 
   const trackMap = new Map();
   const homeLaneMap = {};
   const baseMap = {};
 
-  players.forEach(p => {
+  players.forEach((p, pIdx) => {
     homeLaneMap[p.id] = Array.from({ length: 5 }, () => []);
     baseMap[p.id] = [];
     p.tokens.forEach((t, ti) => {
-      if (t.progress === MAX_PROGRESS) return;
+      if (t.progress === maxProg) return;
       if (t.progress === -1) {
         baseMap[p.id].push({ playerId: p.id, tokenIndex: ti, token: t });
         return;
       }
-      if (t.progress >= HOME_STRETCH_START) {
-        const laneIdx = t.progress - HOME_STRETCH_START;
+      if (t.progress >= homeStart) {
+        const laneIdx = t.progress - homeStart;
         if (laneIdx < 5) homeLaneMap[p.id][laneIdx].push({ playerId: p.id, tokenIndex: ti, token: t });
         return;
       }
-      const absPos = getAbsoluteTrackPos(p.id, t.progress, false);
+      const absPos = getAbsoluteTrackPos(p.id, t.progress, playerCount, pIdx);
       if (!trackMap.has(absPos)) trackMap.set(absPos, []);
       trackMap.get(absPos).push({ playerId: p.id, tokenIndex: ti, token: t });
     });
@@ -974,7 +975,7 @@ function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick })
 
       {/* Finished badges */}
       {players.map(p => {
-        const finishedCount = p.tokens.filter(t => t.progress === MAX_PROGRESS).length;
+        const finishedCount = p.tokens.filter(t => t.progress === maxProg).length;
         if (!finishedCount) return null;
         const positions = {
           red: [3*CELL_4, 7.5*CELL_4],
@@ -982,7 +983,8 @@ function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick })
           yellow: [12*CELL_4, 7.5*CELL_4],
           green: [7.5*CELL_4, 12*CELL_4],
         };
-        const [fx, fy] = positions[p.id];
+        const pos = positions[p.id] || [3*CELL_4, 7.5*CELL_4];
+        const [fx, fy] = pos;
         return (
           <g key={`fin-${p.id}`}>
             <circle cx={fx} cy={fy} r={16} fill="rgba(0,0,0,0.6)" stroke={PLAYER_DEFS[p.id].colorHex} strokeWidth="1.5" />
@@ -997,29 +999,36 @@ function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick })
 }
 
 // ============================================================
-// 6/7-PLAYER LUDO KING STYLE BOARD SVG (Clean Square-Cell Arms)
+// 5, 6, 7-PLAYER LUDO KING STYLE BOARD SVG (Polygonal Corridors)
 // ============================================================
 
-function Board6Player({ players, currentPlayerId, movableTokens, onTokenClick }) {
+function BoardMultiPlayer({ players, currentPlayerId, movableTokens, onTokenClick, playerCount }) {
+  const geo = useMemo(() => buildMultiBoardGeometry(playerCount), [playerCount]);
+  const { angles, track, homeLanes, bases } = geo;
+
+  const homeStart = getHomeStretchStart(playerCount);
+  const maxProg = getMaxProgress(playerCount);
+  const safeSet = useMemo(() => getSafeCellsSet(playerCount), [playerCount]);
+
   const trackMap = new Map();
   const homeLaneMap = {};
   const baseMap = {};
 
-  players.forEach(p => {
+  players.forEach((p, pIdx) => {
     homeLaneMap[p.id] = Array.from({ length: 5 }, () => []);
     baseMap[p.id] = [];
     p.tokens.forEach((t, ti) => {
-      if (t.progress === MAX_PROGRESS) return;
+      if (t.progress === maxProg) return;
       if (t.progress === -1) {
         baseMap[p.id].push({ playerId: p.id, tokenIndex: ti, token: t });
         return;
       }
-      if (t.progress >= HOME_STRETCH_START) {
-        const laneIdx = t.progress - HOME_STRETCH_START;
+      if (t.progress >= homeStart) {
+        const laneIdx = t.progress - homeStart;
         if (laneIdx < 5) homeLaneMap[p.id][laneIdx].push({ playerId: p.id, tokenIndex: ti, token: t });
         return;
       }
-      const absPos = getAbsoluteTrackPos(p.id, t.progress, true);
+      const absPos = getAbsoluteTrackPos(p.id, t.progress, playerCount, pIdx);
       if (!trackMap.has(absPos)) trackMap.set(absPos, []);
       trackMap.get(absPos).push({ playerId: p.id, tokenIndex: ti, token: t });
     });
@@ -1028,71 +1037,99 @@ function Board6Player({ players, currentPlayerId, movableTokens, onTokenClick })
   const isMovable = (pid, ti) => pid === currentPlayerId && movableTokens.includes(ti);
 
   return (
-    <svg viewBox="0 0 600 600" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" className="nludo-board-svg">
-      <rect width="600" height="600" fill="#0b0f19" rx="14" />
+    <svg viewBox="0 0 720 720" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" className="nludo-board-svg">
+      <rect width="720" height="720" fill="#0b0f19" rx="16" />
 
-      {/* Hexagonal Base Panels */}
-      {HEX_ANGLES.map((ang, i) => {
+      {/* Base Cards for all arms */}
+      {angles.map((ang, i) => {
         const uX = Math.cos(ang), uY = Math.sin(ang);
-        const pid = HEX_ORDER[i];
-        const def = PLAYER_DEFS[pid];
-        const bCX = 300 + 245 * uX;
-        const bCY = 300 + 245 * uY;
+        const playerObj = players[i];
+        if (!playerObj) return null;
+        const pid = playerObj.id;
+        const def = PLAYER_DEFS[pid] || PLAYER_DEFS.red;
+        const bCX = 360 + 295 * uX;
+        const bCY = 360 + 295 * uY;
+        const deg = (ang * 180 / Math.PI) + 90;
+
         return (
-          <g key={`arm-bg-${i}`}>
+          <g key={`base-panel-${i}`} transform={`translate(${bCX}, ${bCY}) rotate(${deg})`}>
             <rect
-              x={bCX - 32}
-              y={bCY - 32}
-              width="64"
-              height="64"
-              rx="12"
+              x="-38"
+              y="-38"
+              width="76"
+              height="76"
+              rx="14"
               fill={def.homeColor}
               stroke={def.glowColor}
               strokeWidth="1.5"
             />
+            <text
+              x="0"
+              y="-24"
+              textAnchor="middle"
+              fontSize="9"
+              fontWeight="900"
+              fill={def.colorHex}
+              letterSpacing="0.1em"
+            >
+              {def.label.toUpperCase()}
+            </text>
           </g>
         );
       })}
 
-      {/* 72 Square Track Cells */}
-      {TRACK_6.map((pt, absIdx) => {
-        const isSafe = SAFE_CELLS_6.has(absIdx);
-        const startPlayer = Object.entries(STARTS_6).find(([,s]) => s === absIdx)?.[0];
+      {/* Track Cells (Rotated along spoke angle) */}
+      {track.map((pt, absIdx) => {
+        const isSafe = safeSet.has(absIdx);
+        const isStart = absIdx % 12 === 0;
+        const armIdx = Math.floor(absIdx / 12);
+        const startPlayer = isStart && players[armIdx] ? players[armIdx].id : null;
+        const startDef = startPlayer ? PLAYER_DEFS[startPlayer] : null;
 
         let cellFill = 'rgba(255,255,255,0.03)';
         let cellStroke = 'rgba(255,255,255,0.1)';
 
-        if (startPlayer) {
-          cellFill = PLAYER_DEFS[startPlayer].homeColor;
-          cellStroke = PLAYER_DEFS[startPlayer].glowColor;
+        if (startDef) {
+          cellFill = startDef.homeColor;
+          cellStroke = startDef.glowColor;
         } else if (isSafe) {
           cellFill = 'rgba(255,255,255,0.09)';
-          cellStroke = 'rgba(255,255,255,0.28)';
+          cellStroke = 'rgba(255,255,255,0.3)';
         }
 
         const tokensHere = trackMap.get(absIdx) || [];
+        const deg = (pt.ang * 180 / Math.PI);
 
         return (
-          <g key={`hex-track-${absIdx}`}>
-            <rect
-              x={pt.x - 13}
-              y={pt.y - 13}
-              width="26"
-              height="26"
-              rx="4"
-              fill={cellFill}
-              stroke={cellStroke}
-              strokeWidth="1.2"
-            />
-            {isSafe && (
-              <text x={pt.x} y={pt.y + 4} textAnchor="middle" fontSize="12" fill={startPlayer ? PLAYER_DEFS[startPlayer].colorHex : 'rgba(255,255,255,0.45)'} fontWeight="bold">
-                ★
-              </text>
-            )}
+          <g key={`multi-track-${absIdx}`}>
+            <g transform={`translate(${pt.x}, ${pt.y}) rotate(${deg})`}>
+              <rect
+                x="-12"
+                y="-12"
+                width="24"
+                height="24"
+                rx="4"
+                fill={cellFill}
+                stroke={cellStroke}
+                strokeWidth={isStart ? 1.5 : 1}
+              />
+              {isSafe && (
+                <text
+                  x="0"
+                  y="4"
+                  textAnchor="middle"
+                  fontSize="12"
+                  fill={startDef ? startDef.colorHex : 'rgba(255,255,255,0.5)'}
+                  fontWeight="bold"
+                >
+                  ★
+                </text>
+              )}
+            </g>
             {tokensHere.map(({ playerId, tokenIndex }, ti) => {
               const spread = tokensHere.length > 1;
-              const offsetX = spread ? ((ti % 2) * 14 - 7) : 0;
-              const offsetY = spread ? (Math.floor(ti / 2) * 14 - 4) : 0;
+              const offsetX = spread ? ((ti % 2) * 12 - 6) : 0;
+              const offsetY = spread ? (Math.floor(ti / 2) * 12 - 4) : 0;
               return (
                 <TokenCircle
                   key={`${playerId}-${tokenIndex}`}
@@ -1110,28 +1147,36 @@ function Board6Player({ players, currentPlayerId, movableTokens, onTokenClick })
         );
       })}
 
-      {/* 6 Square Home Lanes */}
-      {Object.entries(HOME_LANES_6).map(([pid, cells]) => {
-        const def = PLAYER_DEFS[pid];
-        return cells.map((pt, laneIdx) => {
+      {/* Home Lanes (5 cells per arm) */}
+      {homeLanes.map((lane, pIdx) => {
+        const playerObj = players[pIdx];
+        if (!playerObj) return null;
+        const pid = playerObj.id;
+        const def = PLAYER_DEFS[pid] || PLAYER_DEFS.red;
+
+        return lane.map((pt, laneIdx) => {
           const tokensHere = (homeLaneMap[pid] || [])[laneIdx] || [];
+          const deg = (pt.ang * 180 / Math.PI);
+
           return (
-            <g key={`hex-home-${pid}-${laneIdx}`}>
-              <rect
-                x={pt.x - 13}
-                y={pt.y - 13}
-                width="26"
-                height="26"
-                rx="4"
-                fill={def.homeColor}
-                stroke={def.glowColor}
-                strokeWidth="1.5"
-              />
-              {laneIdx === 0 && (
-                <text x={pt.x} y={pt.y + 4.5} textAnchor="middle" fontSize="12" fill={def.colorHex} opacity="0.8" fontWeight="bold">
-                  ▶
-                </text>
-              )}
+            <g key={`multi-home-${pid}-${laneIdx}`}>
+              <g transform={`translate(${pt.x}, ${pt.y}) rotate(${deg})`}>
+                <rect
+                  x="-12"
+                  y="-12"
+                  width="24"
+                  height="24"
+                  rx="4"
+                  fill={def.homeColor}
+                  stroke={def.glowColor}
+                  strokeWidth="1.5"
+                />
+                {laneIdx === 0 && (
+                  <text x="0" y="4.5" textAnchor="middle" fontSize="11" fill={def.colorHex} opacity="0.9" fontWeight="bold">
+                    ▼
+                  </text>
+                )}
+              </g>
               {tokensHere.map(({ playerId, tokenIndex }) => (
                 <TokenCircle
                   key={`${playerId}-${tokenIndex}`}
@@ -1149,24 +1194,34 @@ function Board6Player({ players, currentPlayerId, movableTokens, onTokenClick })
         });
       })}
 
-      {/* 6 Base Token Slots */}
-      {Object.entries(BASE_POSITIONS_6).map(([pid, slots]) => {
+      {/* Base Token Slots */}
+      {bases.map((slots, pIdx) => {
+        const playerObj = players[pIdx];
+        if (!playerObj) return null;
+        const pid = playerObj.id;
         const tokens = baseMap[pid] || [];
-        const playerObj = players.find(p => p.id === pid);
-        const maxTokens = playerObj ? playerObj.tokens.length : 4;
+        const maxTokens = playerObj.tokens.length;
 
         return slots.slice(0, maxTokens).map((pt, slotIdx) => {
           const tokenEntry = tokens[slotIdx];
           return (
-            <g key={`hex-base-${pid}-${slotIdx}`}>
-              <circle cx={pt.x} cy={pt.y} r="12" fill="rgba(10,10,10,0.5)" stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="2 2" />
+            <g key={`multi-base-${pid}-${slotIdx}`}>
+              <circle
+                cx={pt.x}
+                cy={pt.y}
+                r="11"
+                fill="rgba(10,10,10,0.5)"
+                stroke="rgba(255,255,255,0.18)"
+                strokeWidth="1"
+                strokeDasharray="2 2"
+              />
               {tokenEntry && (
                 <TokenCircle
                   pid={tokenEntry.playerId}
                   ti={tokenEntry.tokenIndex}
                   cx={pt.x}
                   cy={pt.y}
-                  r={12}
+                  r={11}
                   isMovable={isMovable}
                   onTokenClick={onTokenClick}
                 />
@@ -1176,40 +1231,42 @@ function Board6Player({ players, currentPlayerId, movableTokens, onTokenClick })
         });
       })}
 
-      {/* Central Nexus Triangles */}
-      {HEX_ANGLES.map((ang, i) => {
-        const nextAng = HEX_ANGLES[(i + 1) % 6];
-        const p1X = 300 + 48 * Math.cos(ang), p1Y = 300 + 48 * Math.sin(ang);
-        const p2X = 300 + 48 * Math.cos(nextAng), p2Y = 300 + 48 * Math.sin(nextAng);
-        const pid = HEX_ORDER[i];
-        const def = PLAYER_DEFS[pid];
+      {/* Central Nexus Polygons */}
+      {angles.map((ang, i) => {
+        const nextAng = angles[(i + 1) % playerCount];
+        const p1X = 360 + 64 * Math.cos(ang), p1Y = 360 + 64 * Math.sin(ang);
+        const p2X = 360 + 64 * Math.cos(nextAng), p2Y = 360 + 64 * Math.sin(nextAng);
+        const playerObj = players[i];
+        const pid = playerObj ? playerObj.id : 'red';
+        const def = PLAYER_DEFS[pid] || PLAYER_DEFS.red;
+
         return (
           <polygon
-            key={`hex-center-${i}`}
-            points={`300,300 ${p1X},${p1Y} ${p2X},${p2Y}`}
+            key={`multi-center-${i}`}
+            points={`360,360 ${p1X},${p1Y} ${p2X},${p2Y}`}
             fill={def.homeColor}
             stroke={def.glowColor}
             strokeWidth="1.2"
           />
         );
       })}
-      <circle cx="300" cy="300" r="18" fill="rgba(11,15,25,0.95)" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
-      <text x="300" y="305" textAnchor="middle" fontSize="16" fill="#ffffff" style={{ filter: 'drop-shadow(0 0 8px #fff)' }}>
+      <circle cx="360" cy="360" r="20" fill="rgba(11,15,25,0.95)" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+      <text x="360" y="366" textAnchor="middle" fontSize="18" fill="#ffffff" style={{ filter: 'drop-shadow(0 0 8px #fff)' }}>
         ★
       </text>
 
       {/* Finished Badges */}
-      {players.map(p => {
-        const finishedCount = p.tokens.filter(t => t.progress === MAX_PROGRESS).length;
+      {players.map((p, pIdx) => {
+        const finishedCount = p.tokens.filter(t => t.progress === maxProg).length;
         if (!finishedCount) return null;
-        const pIdx = HEX_ORDER.indexOf(p.id);
-        const ang = HEX_ANGLES[pIdx !== -1 ? pIdx : 0];
-        const fx = 300 + 285 * Math.cos(ang);
-        const fy = 300 + 285 * Math.sin(ang);
+        const ang = angles[pIdx];
+        const fx = 360 + 338 * Math.cos(ang);
+        const fy = 360 + 338 * Math.sin(ang);
+        const def = PLAYER_DEFS[p.id];
         return (
-          <g key={`hex-fin-${p.id}`}>
-            <circle cx={fx} cy={fy} r={14} fill="rgba(0,0,0,0.7)" stroke={PLAYER_DEFS[p.id].colorHex} strokeWidth="1.5" />
-            <text x={fx} y={fy + 4.5} textAnchor="middle" fontSize="12" fontWeight="900" fill={PLAYER_DEFS[p.id].colorHex}>
+          <g key={`multi-fin-${p.id}`}>
+            <circle cx={fx} cy={fy} r={14} fill="rgba(0,0,0,0.8)" stroke={def.colorHex} strokeWidth="1.5" />
+            <text x={fx} y={fy + 4.5} textAnchor="middle" fontSize="12" fontWeight="900" fill={def.colorHex}>
               {finishedCount}
             </text>
           </g>
@@ -1293,11 +1350,11 @@ export default function NeonLudoGame() {
     setScreen('game');
 
     if (newPlayers[0].isBot) {
-      delay(800, () => doBotRoll(newPlayers, 0, newPlayers[0].difficulty, cfg.is6Player));
+      delay(800, () => doBotRoll(newPlayers, 0, newPlayers[0].difficulty, cfg.playerCount));
     }
   }
 
-  function doBotRoll(ps, idx, diff, is6Player) {
+  function doBotRoll(ps, idx, diff, playerCount) {
     const player = ps[idx];
     if (!player || !player.isBot) return;
     setStatusMsg(`${player.label} (AI) is calculating...`);
@@ -1309,16 +1366,16 @@ export default function NeonLudoGame() {
       setDiceValue(roll);
       addLog(`${player.label} rolled ${roll}`);
 
-      const movable = getMovableTokens(player, roll);
+      const movable = getMovableTokens(player, roll, playerCount);
       if (!movable.length) {
         setStatusMsg(`${player.label} rolled ${roll} — no valid moves.`);
-        delay(900, () => advanceTurn(ps, idx, false, is6Player));
+        delay(900, () => advanceTurn(ps, idx, false, playerCount));
         return;
       }
 
-      const choice = chooseBotMove(player, roll, movable, ps, diff || 'normal', is6Player);
+      const choice = chooseBotMove(player, idx, roll, movable, ps, diff || 'normal', playerCount);
       setStatusMsg(`${player.label} rolled ${roll} and moves token ${choice + 1}.`);
-      delay(800, () => doMoveToken(ps, idx, choice, roll, is6Player));
+      delay(800, () => doMoveToken(ps, idx, choice, roll, playerCount));
     });
   }
 
@@ -1337,11 +1394,11 @@ export default function NeonLudoGame() {
     setDiceValue(roll);
     addLog(`${player.label} rolled ${roll}`);
 
-    const movable = getMovableTokens(player, roll);
+    const movable = getMovableTokens(player, roll, cfg?.playerCount || 4);
     if (!movable.length) {
       setStatusMsg(`Rolled ${roll} — no legal moves. Passing turn.`);
       setPhase('roll');
-      delay(1100, () => advanceTurn(ps, idx, false, cfg?.is6Player));
+      delay(1100, () => advanceTurn(ps, idx, false, cfg?.playerCount || 4));
       return;
     }
 
@@ -1354,15 +1411,19 @@ export default function NeonLudoGame() {
     }
   }
 
-  function doMoveToken(ps, playerIdx, tokenIndex, roll, is6Player) {
+  function doMoveToken(ps, playerIdx, tokenIndex, roll, playerCount) {
     triggerSound('step');
+    const maxProg = getMaxProgress(playerCount);
+    const homeStart = getHomeStretchStart(playerCount);
+    const safeSet = getSafeCellsSet(playerCount);
+
     const newPlayers = ps.map((p, pi) => {
       if (pi !== playerIdx) return p;
       const newTokens = p.tokens.map((t, ti) => {
         if (ti !== tokenIndex) return t;
         const prev = t.progress;
         const next = prev === -1 ? 0 : prev + roll;
-        return { ...t, progress: Math.min(next, MAX_PROGRESS) };
+        return { ...t, progress: Math.min(next, maxProg) };
       });
       return { ...p, tokens: newTokens };
     });
@@ -1374,14 +1435,13 @@ export default function NeonLudoGame() {
 
     let capturedVictims = [];
     let grantExtraTurn = roll === 6;
-    const safeSet = getSafeCellsSet(is6Player);
 
-    const updatedPlayers = newPlayers.map(p => {
+    const updatedPlayers = newPlayers.map((p, pIdx) => {
       if (p.id === mover.id) return p;
       const newTokens = p.tokens.map(t => {
-        if (t.progress < 0 || t.progress >= HOME_STRETCH_START) return t;
-        const absPos = getAbsoluteTrackPos(p.id, t.progress, is6Player);
-        const moverAbs = newProgress >= HOME_STRETCH_START ? null : getAbsoluteTrackPos(mover.id, newProgress, is6Player);
+        if (t.progress < 0 || t.progress >= homeStart) return t;
+        const absPos = getAbsoluteTrackPos(p.id, t.progress, playerCount, pIdx);
+        const moverAbs = newProgress >= homeStart ? null : getAbsoluteTrackPos(mover.id, newProgress, playerCount, playerIdx);
         if (moverAbs !== null && absPos === moverAbs && !safeSet.has(absPos)) {
           capturedVictims.push(p);
           return { ...t, progress: -1 };
@@ -1397,8 +1457,8 @@ export default function NeonLudoGame() {
       grantExtraTurn = true;
       triggerSound('capture');
       const victim = capturedVictims[0];
-      const capturerDef = PLAYER_DEFS[mover.id];
-      const victimDef = PLAYER_DEFS[victim.id];
+      const capturerDef = PLAYER_DEFS[mover.id] || PLAYER_DEFS.red;
+      const victimDef = PLAYER_DEFS[victim.id] || PLAYER_DEFS.blue;
 
       setCapturedEffect({
         capturerId: mover.id,
@@ -1415,7 +1475,7 @@ export default function NeonLudoGame() {
 
     if (prevProgress === -1 && newProgress === 0) {
       addLog(`${mover.label} brought token ${tokenIndex + 1} into play.`);
-    } else if (newProgress === MAX_PROGRESS) {
+    } else if (newProgress === maxProg) {
       grantExtraTurn = true;
       triggerSound('bonus');
       addLog(`🏠 ${mover.label} scored token ${tokenIndex + 1} home! Bonus roll!`);
@@ -1426,7 +1486,7 @@ export default function NeonLudoGame() {
     setPhase('roll');
 
     // Victory check
-    const isWinner = updatedPlayers[playerIdx].tokens.every(t => t.progress === MAX_PROGRESS);
+    const isWinner = updatedPlayers[playerIdx].tokens.every(t => t.progress === maxProg);
     if (isWinner) {
       setWinner(updatedPlayers[playerIdx]);
       triggerSound('victory');
@@ -1441,14 +1501,14 @@ export default function NeonLudoGame() {
     if (grantExtraTurn) {
       setStatusMsg(`${mover.label} earned a bonus roll!`);
       if (mover.isBot) {
-        delay(nextActionDelay, () => doBotRoll(updatedPlayers, playerIdx, mover.difficulty, is6Player));
+        delay(nextActionDelay, () => doBotRoll(updatedPlayers, playerIdx, mover.difficulty, playerCount));
       } else {
         setDiceValue(null);
         setPhase('roll');
         setStatusMsg(`Bonus turn! Roll again.`);
       }
     } else {
-      delay(nextActionDelay, () => advanceTurn(updatedPlayers, playerIdx, false, is6Player));
+      delay(nextActionDelay, () => advanceTurn(updatedPlayers, playerIdx, false, playerCount));
     }
   }
 
@@ -1465,16 +1525,16 @@ export default function NeonLudoGame() {
 
     const roll = diceValue;
     setPhase('bot');
-    doMoveToken(ps, idx, tokenIndex, roll, cfg?.is6Player);
+    doMoveToken(ps, idx, tokenIndex, roll, cfg?.playerCount || 4);
   }
 
-  function advanceTurn(ps, fromIdx, extraTurn, is6Player) {
+  function advanceTurn(ps, fromIdx, extraTurn, playerCount) {
     if (extraTurn) {
       const player = ps[fromIdx];
       setDiceValue(null);
       setPhase('roll');
       if (player.isBot) {
-        doBotRoll(ps, fromIdx, player.difficulty, is6Player);
+        doBotRoll(ps, fromIdx, player.difficulty, playerCount);
       } else {
         setStatusMsg(`Bonus roll! Go again.`);
       }
@@ -1491,7 +1551,7 @@ export default function NeonLudoGame() {
 
     if (nextPlayer.isBot) {
       setStatusMsg(`${nextPlayer.label} (AI) is rolling...`);
-      delay(700, () => doBotRoll(ps, nextIdx, nextPlayer.difficulty, is6Player));
+      delay(700, () => doBotRoll(ps, nextIdx, nextPlayer.difficulty, playerCount));
     } else {
       setStatusMsg(`Your turn, ${nextPlayer.label}! Roll the dice.`);
     }
@@ -1525,7 +1585,9 @@ export default function NeonLudoGame() {
   useEffect(() => () => clearTimer(), []);
 
   const currentPlayer = players[currentIdx];
-  const is6Player = !!config?.is6Player;
+  const activePlayerCount = config?.playerCount || 4;
+  const isMulti = activePlayerCount >= 5;
+  const homeStart = getHomeStretchStart(activePlayerCount);
 
   if (screen === 'lobby') {
     return (
@@ -1541,6 +1603,7 @@ export default function NeonLudoGame() {
         <VictoryScreen
           winner={winner}
           players={players}
+          playerCount={activePlayerCount}
           onPlayAgain={() => startGame(config)}
           onNewGame={() => setScreen('lobby')}
         />
@@ -1550,7 +1613,7 @@ export default function NeonLudoGame() {
 
   return (
     <div className="nludo-shell">
-      {showHelp && <HowToPlayModal onClose={() => setShowHelp(false)} is6Player={is6Player} />}
+      {showHelp && <HowToPlayModal onClose={() => setShowHelp(false)} playerCount={activePlayerCount} />}
 
       <div className="nludo-game-layout">
         {/* ── Board Area ── */}
@@ -1576,12 +1639,13 @@ export default function NeonLudoGame() {
           </div>
 
           <div className="nludo-board-wrap">
-            {is6Player ? (
-              <Board6Player
+            {isMulti ? (
+              <BoardMultiPlayer
                 players={players}
                 currentPlayerId={currentPlayer?.id}
                 movableTokens={phase === 'move' && !currentPlayer?.isBot ? movableTokens : []}
                 onTokenClick={handleTokenClick}
+                playerCount={activePlayerCount}
               />
             ) : (
               <Board4Player
@@ -1589,6 +1653,7 @@ export default function NeonLudoGame() {
                 currentPlayerId={currentPlayer?.id}
                 movableTokens={phase === 'move' && !currentPlayer?.isBot ? movableTokens : []}
                 onTokenClick={handleTokenClick}
+                playerCount={activePlayerCount}
               />
             )}
 
@@ -1658,14 +1723,14 @@ export default function NeonLudoGame() {
 
           {/* Players Roster */}
           <div className="nludo-players-card">
-            <h3 className="nludo-card-title">Players {is6Player ? `(${players.length}-Player)` : ''}</h3>
+            <h3 className="nludo-card-title">Players {isMulti ? `(${players.length}-Player)` : ''}</h3>
             <div className="nludo-player-list">
               {players.map((p, idx) => {
-                const def = PLAYER_DEFS[p.id];
-                const done = p.tokens.filter(t => t.progress === MAX_PROGRESS).length;
+                const def = PLAYER_DEFS[p.id] || PLAYER_DEFS.red;
+                const done = p.tokens.filter(t => t.progress === getMaxProgress(activePlayerCount)).length;
                 const inBase = p.tokens.filter(t => t.progress === -1).length;
-                const onTrack = p.tokens.filter(t => t.progress >= 0 && t.progress < HOME_STRETCH_START).length;
-                const inLane = p.tokens.filter(t => t.progress >= HOME_STRETCH_START && t.progress < MAX_PROGRESS).length;
+                const onTrack = p.tokens.filter(t => t.progress >= 0 && t.progress < homeStart).length;
+                const inLane = p.tokens.filter(t => t.progress >= homeStart && t.progress < getMaxProgress(activePlayerCount)).length;
                 const isActive = idx === currentIdx;
                 return (
                   <div key={p.id} className={`nludo-player-row ${isActive ? 'active' : ''}`}
@@ -1727,3 +1792,4 @@ export default function NeonLudoGame() {
     </div>
   );
 }
+

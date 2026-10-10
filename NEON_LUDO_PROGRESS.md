@@ -1,23 +1,26 @@
 # GamiArc Neon Ludo — Progress & Implementation Documentation
 
 ## Overview
-Neon Ludo is a complete, fully functional, mobile-first and responsive Classic & 6-Player Ludo implementation built within the GamiArc cyberpunk/neon aesthetic design system. It supports **Play vs Bots**, **same-device multiplayer (Pass & Play)**, **mixed human/bot matches**, **Quick Play**, **Classic 2–4 Player 15x15 board**, and **Ludo King-style 6-Player square-corridor board**, featuring authentic geometry, unrigged heuristic AI across 4 difficulty tiers, slow-motion capture feedback with color highlighting, Web Audio synthesized sound effects, keyboard shortcuts, a concise How to Play guide, and clean mobile UI with zero duplicate data.
+Neon Ludo is a complete, fully functional, mobile-first and responsive Classic & Multi-Player (2–7 Players) Ludo implementation built within the GamiArc cyberpunk/neon aesthetic design system. It supports **Play vs Bots**, **same-device multiplayer (Pass & Play)**, **mixed human/bot matches**, **Quick Play**, **Classic 2–4 Player 15x15 board**, and **5, 6, 7-Player Ludo King-style polygonal corridor boards**, featuring authentic non-overlapping geometry, proper base exit alignment, unrigged heuristic AI across 4 difficulty tiers, slow-motion capture feedback with color highlighting, Web Audio synthesized sound effects, keyboard shortcuts, a concise How to Play guide, and clean mobile UI with zero duplicate data.
 
 ---
 
 ## Features & Implementation Details
 
-### 1. Dedicated Ludo King-Style 6-Player Board
-- **Corridor Geometry**: Authentic 6-arm layout with square/rectangular bordered cells, 6 square base pods with 4 token nests each, 6 colored home corridors, and central 6-segment nexus.
-- **6 Vibrant Cyberpunk Colors**:
-  1. **Red** (`#ef4444`) – Top-Left
-  2. **Orange** (`#f97316`) – Top-Right
-  3. **Yellow** (`#eab308`) – Far Right
-  4. **Green** (`#22c55e`) – Bottom-Right
-  5. **Cyan** (`#06b6d4`) – Bottom-Left
-  6. **Purple** (`#a855f7`) – Far Left
-- **72 Track Cells**: 12 square cells per arm with safe cells and entry arrows, maintaining exact standard Ludo King corridor logic.
-- **Seamless Engine Compatibility**: Engine dynamically switches between the 4-player 15×15 grid and the 6-player board based on selected player count.
+### 1. Dedicated Ludo King-Style 5, 6, and 7-Player Polygonal Boards
+- **Corridor Geometry**: Spaced $N$-arm layout with square/rectangular bordered cells rotated along each arm angle, $N$ square base pods with 4 token nests each, $N$ colored home corridors, and central $N$-segment nexus.
+- **Zero Cell Overlap**: Optimized radial step spacing ($R \in [100, 130, 160, 190, 220]$) and $26\text{px}$ corridor lane offsets ensuring minimum $27.8\text{px}$ separation between all adjacent track cells across 5, 6, and 7 players.
+- **Accurate Base Exits**: Rolling a 6 moves tokens directly from the player's base yard ($R=295$) to their designated starting square ($R=220$, index $i \times 12$) located right in front of their base door, flowing inward toward the center.
+- **7 Vibrant Cyberpunk Colors**:
+  1. **Red** (`#ef4444`) – Top spoke
+  2. **Orange** (`#f97316`)
+  3. **Yellow** (`#eab308`)
+  4. **Green** (`#22c55e`)
+  5. **Cyan** (`#06b6d4`)
+  6. **Blue** (`#3b82f6`)
+  7. **Purple** (`#a855f7`)
+- **Track Length**: $12 \times N$ square cells ($60$ for 5P, $72$ for 6P, $84$ for 7P) with safe cells at index $i \times 12$ (Start) and $i \times 12 + 8$ (Outward Star).
+- **Seamless Engine Compatibility**: Engine dynamically switches between the 4-player 15×15 grid and the $N$-player polygon board based on selected player count.
 
 ### 2. Slow-Paced Captures & Clear Color Identifiers
 - **Pacing**: Capture transitions feature a deliberate 1.5s–1.6s delay, allowing all players to observe the capture event and see the captured token being sent back to its base.
@@ -59,7 +62,7 @@ Neon Ludo is a complete, fully functional, mobile-first and responsive Classic &
 
 | File | Changes Made |
 | --- | --- |
-| `components/games/NeonLudoGame.jsx` | Added Ludo King style 6-player board component (`Board6Player`), dynamic 4-player/6-player engine switching, Web Audio sound synthesizer, sound toggle, How to Play modal, keyboard controls, legal move highlights, slow-motion capture banner with color badges, 6-player roster and presets, and single-turn display on mobile. |
+| `components/games/NeonLudoGame.jsx` | Added multi-player polygon board component (`BoardMultiPlayer`), dynamic 2–7 player engine switching, Web Audio sound synthesizer, sound toggle, How to Play modal, keyboard controls, legal move highlights, slow-motion capture banner with color badges, 2–7 player roster and presets, and single-turn display on mobile. |
 | `app/games/Gamiarc_ludo/ludo.css` | Added capture banner overlay styling, hidden duplicate turn card on mobile viewports ($\le 960\text{px}$), modal styling for How to Play guide, sound button styling, and updated roster card grids. |
 | `lib/games.js` | Status set to `'published'` (removed "Under Development" badge). |
 | `components/games/GameCard.jsx` | Updated play link to direct to the live game page. |
@@ -68,13 +71,16 @@ Neon Ludo is a complete, fully functional, mobile-first and responsive Classic &
 ---
 
 ## Verification & Status
-- [x] Classic 15x15 4-player board and Ludo King-style 6-player board both operational.
+- [x] Classic 15x15 4-player board and 5, 6, 7-player polygonal corridor boards operational.
+- [x] Zero cell mixing or overlap with minimum $27.8\text{px}$ distance between all cells.
+- [x] Tokens exit base on 6 directly onto their aligned start tile right in front of the base.
 - [x] Slow-mo capture pacing with clear color-coded notifications.
 - [x] Zero duplicate turn data on mobile screens.
 - [x] Web Audio sound effects with mute toggle.
 - [x] Keyboard shortcuts and legal move highlights.
 - [x] How to Play guide modal.
-- [x] Play vs Bots, Pass & Play, and Custom Mixed Matches for 2–6 players.
+- [x] Play vs Bots, Pass & Play, and Custom Mixed Matches for 2–7 players.
 - [x] Quick Play (2 tokens) and Classic Mode (4 tokens).
 - [x] Production build passes with 0 errors (`next build`).
+
 
