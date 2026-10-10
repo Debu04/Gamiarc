@@ -1,53 +1,46 @@
 # GamiArc Neon Ludo — Progress & Implementation Documentation
 
 ## Overview
-Neon Ludo is a complete, fully functional, mobile-responsive Classic Ludo implementation built within the GamiArc cyberpunk/neon aesthetic design system. It supports 2 to 4 players (Local Pass & Play, Solo vs AI Bots, or custom Human/Bot mix), featuring authentic Classic Ludo rules, intelligent AI behavior, smooth dice & token movement animations, and comprehensive victory tracking.
+Neon Ludo is a complete, fully functional, mobile-first and responsive Classic Ludo implementation built within the GamiArc cyberpunk/neon aesthetic design system. It supports **Play vs Bots**, **same-device multiplayer (Pass & Play)**, **mixed human/bot matches**, and **Quick Play**, featuring authentic 15×15 Classic Ludo board geometry, unrigged heuristic AI across 4 difficulty tiers, smooth animations, touch-friendly interactive targets, and clean unified dice rolling without duplicates.
 
 ---
 
-## Game Engine & Core Rules Implemented
+## What Was Fixed & Added in This Update
 
-### 1. Board Geometry & Track System
-- **15x15 Standard Ludo Grid**: SVG-based board scaled dynamically (`viewBox="0 0 600 600"`, `CELL = 40`).
-- **Standard Track (52 cells)**: Authentic clockwise track starting with Red (index 0), Blue (index 13), Yellow (index 26), Green (index 39).
-- **Corner Base Zones**: Four 6x6 corner bases with 4 token slots per player, colored borders, and glowing neon accents.
-- **Home Stretch & Center Goal**: 5-cell private home stretches for each color leading to the central neon finish zone (`MAX_PROGRESS = 57`).
-- **Safe Cells**: 8 authentic safe cells (starting squares 0, 13, 26, 39 and star safe cells 8, 21, 34, 47) where tokens are immune to capture.
+### 1. 100% Authentic 15×15 Ludo Board Grid
+- **Verified 52-Cell Standard Track**: Clockwise perimeter track aligned across 6×6 corner bases and 3-cell wide cross arms:
+  - Red Start: `[1, 6]` (next to top-left base)
+  - Blue Start: `[8, 1]` (next to top-right base)
+  - Yellow Start: `[13, 8]` (next to bottom-right base)
+  - Green Start: `[6, 13]` (next to bottom-left base)
+- **Standard 8 Safe Cells**: 4 Player entry squares (`0, 13, 26, 39`) + 4 star safe cells (`8, 21, 34, 47`) with glowing star icons (`★`).
+- **5-Cell Colored Home Stretches**:
+  - Red: `[[1, 7], [2, 7], [3, 7], [4, 7], [5, 7]]` (Left to Center)
+  - Blue: `[[7, 1], [7, 2], [7, 3], [7, 4], [7, 5]]` (Top to Center)
+  - Yellow: `[[13, 7], [12, 7], [11, 7], [10, 7], [9, 7]]` (Right to Center)
+  - Green: `[[7, 13], [7, 12], [7, 11], [7, 10], [7, 9]]` (Bottom to Center)
+- **Center Nexus Triangles**: 4 colored finish triangles converging at `(300, 300)`.
 
-### 2. Token Entry & Movement
-- **Token Entry**: Rolling a **6** allows a token in base (`progress = -1`) to enter the player's start track square (`progress = 0`).
-- **Track Progress (`0-51`)**: Tokens move along the 52-cell track relative to their starting square.
-- **Home Stretch (`52-56`)**: Tokens transition into their player's dedicated colored home stretch after 51 track steps.
-- **Exact Finishing Rolls (`57`)**: A token requires an exact roll to enter the center home. If a roll overshoots `57`, the token cannot make that move.
+### 2. Single Dedicated Dice Display (No Mobile Duplication)
+- **Unified Control**: Removed the duplicate mini-dice from the top mobile turn bar.
+- **Dedicated Interactive Dice Card**: The single `.nludo-dice-card` handles all rolling animations, sound effects, and result badges cleanly on both mobile and desktop.
+- **Top Mobile Header**: Focuses exclusively on clean active turn status and game phase messaging.
 
-### 3. Captures & Extra Turns
-- **Captures**: Landing on an opponent's token on a non-safe cell captures it, sending it back to the opponent's base (`progress = -1`).
-- **Bonus Turns Granted For**:
-  - Rolling a **6** (with consecutive sixes tracked).
-  - Capturing an opponent token.
-  - Successfully moving a token into the center goal.
-- **Three Consecutive Sixes Rule**: Rolling three 6s in a row ends the turn immediately to prevent infinite turns.
+### 3. Match Presets & Custom Roster Configuration
+- **Play vs Computer**: 1 Human vs 1–3 AI bots.
+- **Same-Device Multiplayer (Pass & Play)**: All human players on the same device.
+- **Mixed Human / Bot Matches**: Individual per-player toggle (`[👤 Human]` vs `[🤖 Bot]`) allowing any custom co-op or mixed matchup (e.g. 2 Humans + 2 Bots, 3 Humans + 1 Bot).
+- **Bot Battle**: Full AI simulation mode.
+- **Quick Play Mode**: 2 tokens per player for faster-paced games alongside standard 4-token Classic Mode.
+- **2-Player Opposite Mode**: In 2-player games, players are positioned in opposite corners (Red vs Yellow) for balanced board control.
 
-### 4. Turn Flow & Bot AI
-- **Turn Rotation**: Turns pass seamlessly to the next active player when no extra turn is earned or no valid moves exist.
-- **Auto-Pass on No Moves**: If a player rolls and has no movable tokens (e.g. all in base and rolled < 6, or overshooting home), turn passes smoothly with notification.
-- **Intelligent Bot AI**:
-  - Heuristic-based scoring engine for AI decisions.
-  - Evaluates: winning moves, capture moves, exiting base on 6, moving tokens safely into home stretch, escaping opponent capture threat, and advancing tokens toward goal.
-  - 4 Selectable Bot Difficulties: **Easy**, **Normal**, **Hard**, and **Cyberpunk Expert**.
-
-### 5. Player Configurations & Game Modes
-- **Player Counts**: 2 Players (Opposite or Adjacent), 3 Players, 4 Players.
-- **Participant Types**: Human vs Human (Local Pass & Play), Human vs Bot(s), Bot vs Bot simulation.
-- **Game Modes**:
-  - **Classic Mode**: Standard 4 tokens per player to reach home.
-  - **Quick Mode**: 2 tokens per player for faster games.
-
-### 6. Visuals, UI & Audio Feedback
-- **Neon Aesthetic**: Glowing track paths, neon token highlights, pulsating valid move rings, 3D neon rolling dice.
-- **Sound & Web Audio API**: Built-in Web Audio synthesizer generating retro sci-fi sound effects (dice roll, token move, capture, bonus turn, victory fanfare) without external audio asset dependencies.
-- **Action Log**: Real-time event log with color-coded badges tracking all rolls, moves, captures, and finishes.
-- **Victory & Podium**: Dynamic celebration modal with final player ranks, game statistics, and play-again options.
+### 4. Unrigged Progressive AI Strategy Engine
+- Strictly authentic random dice generation (`Math.floor(Math.random() * 6) + 1`).
+- Four progressive difficulty tiers:
+  - **Easy**: Casual moves with random selection among legal options.
+  - **Normal**: Balanced play; prioritizes base exits on 6 and basic progress.
+  - **Hard**: Tactical play; aggressively hunts captures, targets star safe squares, and safely navigates home lanes.
+  - **Expert (Grandmaster)**: Threat avoidance algorithm evaluating enemy strike zones (1–6 cells behind), escaping vulnerable squares, high-value captures, and exact finish opportunities.
 
 ---
 
@@ -55,18 +48,16 @@ Neon Ludo is a complete, fully functional, mobile-responsive Classic Ludo implem
 
 | File | Changes Made |
 | --- | --- |
-| `components/games/NeonLudoGame.jsx` | Full implementation of the Classic Ludo game engine, interactive SVG board, AI bot system, sound engine, lobby setup, and victory dialogs. |
-| `app/games/Gamiarc_ludo/page.js` | Updated page structure with metadata, breadcrumb, game container, and game guide. |
-| `app/games/Gamiarc_ludo/ludo.css` | Comprehensive styling for the neon Ludo board, dice animations, token glow effects, responsive sidebars, and control modals. |
-| `lib/games.js` | Updated Neon Ludo status from `'under-development'` to `'published'`. |
-| `components/games/GameCard.jsx` | Enabled playability check for all games marked with `status: 'published'`. |
+| `components/games/NeonLudoGame.jsx` | Full authentic 15x15 board geometry, unrigged 4-tier AI heuristics, Quick Play token count (2 vs 4), per-player Human/Bot roster toggles, match presets, single dedicated dice display, Web Audio sound effects. |
+| `app/games/Gamiarc_ludo/ludo.css` | Roster cards, quick presets styling, mobile turn bar cleanup, responsive board wrap, touch-friendly tap targets. |
+| `NEON_LUDO_PROGRESS.md` | Progress and architecture documentation updated. |
 
 ---
 
 ## Verification & Status
-- [x] Classic Ludo rules verified (entry on 6, 52-cell track, home lanes, exact finish, safe cells, captures).
-- [x] 2, 3, and 4 player game modes.
-- [x] Solo vs AI Bots with multi-difficulty heuristics.
-- [x] Sound effects and responsive mobile/desktop UI.
-- [x] "Under Development" badge removed from GamiArc catalog.
-- [x] All changes isolated to Neon Ludo components; no other games or routes affected.
+- [x] Authentic 15x15 Ludo board geometry with 52 perimeter squares and 5-cell home stretches.
+- [x] No duplicate dice display on mobile screens.
+- [x] Play vs Bots, Same-device Pass & Play, and Custom Mixed Matches.
+- [x] Quick Play (2 tokens) and Classic Mode (4 tokens).
+- [x] Easy, Normal, Hard, Expert AI heuristics.
+- [x] Next.js build passes with 0 errors.
