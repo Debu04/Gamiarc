@@ -34,9 +34,11 @@ The old experimental 5–7 player polygonal corridor boards have been removed in
 - **High-Visibility Electric Blue & Vibrant Palette**:
   - Removed muddy/dark black shades that reduced visibility in 7-player matches.
   - Blue updated to vibrant neon `#3b82f6` / `#60a5fa` glow for crystal-clear readability across all devices.
-- **Dynamic Turn-Colored Dice & Roll Button**:
-  - The dice face border and pips dynamically match the active player's color and glow.
-  - The "Roll Dice" button dynamically matches the active player's neon color gradient, glowing border, and displays the active player's name (e.g. `🎲 Roll Dice (Red)`).
+- **Subtle Turn Indicators on Dice & Roll Button**:
+  - The dice dots (pips) remain clean crisp white (`#ffffff`).
+  - Only the dice border outline reflects the active player's color and soft glow.
+  - The "Roll Dice" button keeps its sleek dark styling, with only its border and subtle glow matching the active player.
+  - The redundant "Players" card in the sidebar has been removed to reduce clutter and keep focus on the board and live match log.
 - **96-Cell Continuous Circuit**:
   - 12 cells per arm sector ($8 \times 12 = 96$ cells).
   - Home stretch starts at progress 96, exact roll required to bear off at progress 101.

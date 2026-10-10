@@ -656,7 +656,7 @@ function DiceFace({ value, rolling, colorHex, glowColor }) {
           fill="rgba(15,23,42,0.96)"
           stroke={strokeColor}
           strokeWidth="3.5"
-          style={{ filter: `drop-shadow(0 0 10px ${shadowColor})` }}
+          style={{ filter: `drop-shadow(0 0 8px ${shadowColor})` }}
         />
         {dots.map(([cx, cy], i) => (
           <circle
@@ -664,8 +664,8 @@ function DiceFace({ value, rolling, colorHex, glowColor }) {
             cx={cx}
             cy={cy}
             r="9"
-            fill={colorHex || '#ffffff'}
-            style={{ filter: `drop-shadow(0 0 6px ${shadowColor})` }}
+            fill="#ffffff"
+            style={{ filter: 'drop-shadow(0 0 2px rgba(255,255,255,0.8))' }}
           />
         ))}
       </svg>
@@ -1831,15 +1831,10 @@ export default function NeonLudoGame() {
               disabled={phase !== 'roll' || currentPlayer?.isBot}
               aria-label="Roll Dice"
               style={curDef && phase === 'roll' && !currentPlayer?.isBot ? {
-                background: `linear-gradient(135deg, ${curDef.colorHex}55, ${curDef.colorHex}cc)`,
                 borderColor: curDef.colorHex,
-                boxShadow: `0 0 20px ${curDef.glowColor}, 0 0 40px ${curDef.glowColor}`,
-                color: '#ffffff',
-                textShadow: '0 0 8px rgba(0,0,0,0.9)',
-                fontWeight: 900,
+                boxShadow: `0 0 14px ${curDef.glowColor}`,
               } : curDef ? {
                 borderColor: `${curDef.colorHex}50`,
-                color: '#ffffff',
               } : {}}
             >
               {diceRolling
@@ -1853,38 +1848,6 @@ export default function NeonLudoGame() {
                 Tap a highlighted token to move (or press 1–4)
               </p>
             )}
-          </div>
-
-          {/* Players Roster */}
-          <div className="nludo-players-card">
-            <h3 className="nludo-card-title">Players {isMulti ? `(${players.length}-Player)` : ''}</h3>
-            <div className="nludo-player-list">
-              {players.map((p, idx) => {
-                const def = PLAYER_DEFS[p.id] || PLAYER_DEFS.red;
-                const done = p.tokens.filter(t => t.progress === getMaxProgress(activePlayerCount)).length;
-                const inBase = p.tokens.filter(t => t.progress === -1).length;
-                const onTrack = p.tokens.filter(t => t.progress >= 0 && t.progress < homeStart).length;
-                const inLane = p.tokens.filter(t => t.progress >= homeStart && t.progress < getMaxProgress(activePlayerCount)).length;
-                const isActive = idx === currentIdx;
-                return (
-                  <div key={p.id} className={`nludo-player-row ${isActive ? 'active' : ''}`}
-                    style={isActive ? { borderColor: def.colorHex + '50' } : {}}>
-                    <div className="nludo-player-info">
-                      <span className="nludo-player-color"
-                        style={{ background: def.colorHex, boxShadow: `0 0 6px ${def.colorHex}` }} />
-                      <span className="nludo-player-name">{p.label}</span>
-                      {p.isBot && <span className="nludo-bot-tag">AI</span>}
-                    </div>
-                    <div className="nludo-token-bars">
-                      <span title="In Base" className="nludo-bar-item nludo-bar-base">{inBase}🏠</span>
-                      <span title="On Track" className="nludo-bar-item nludo-bar-track">{onTrack}🔄</span>
-                      <span title="Home Lane" className="nludo-bar-item nludo-bar-lane">{inLane}→</span>
-                      <span title="Finished" className="nludo-bar-item nludo-bar-done">{done}✓</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
           </div>
 
           {/* Live Game Event Log */}
