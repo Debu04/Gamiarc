@@ -1264,3 +1264,552 @@ section { padding: 80px 0; }
     min-height: 500px;
   }
 }
+
+/* ============================================================
+   NEON LUDO GAME — Mobile-First Responsive Styles (nludo-*)
+   ============================================================ */
+
+/* ── Shell ── */
+.nludo-shell {
+  width: 100%;
+  max-width: 100%;
+  min-height: 520px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(10,10,20,0.98), rgba(8,8,16,0.98));
+  border: 1px solid rgba(255,255,255,0.07);
+  overflow: hidden;
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* ── LOBBY ── */
+.nludo-lobby {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(14px, 3vw, 24px);
+  min-height: 520px;
+  box-sizing: border-box;
+}
+.nludo-lobby-inner {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(14px, 2.5vw, 20px);
+  box-sizing: border-box;
+}
+.nludo-lobby-header { text-align: center; margin-bottom: 2px; }
+.nludo-lobby-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(6,182,212,0.1); border: 1px solid rgba(6,182,212,0.3);
+  border-radius: 999px; padding: 4px 14px;
+  font-size: 0.65rem; font-weight: 800; letter-spacing: 0.2em; color: #06b6d4;
+  margin-bottom: 10px;
+}
+.nludo-badge-dot {
+  width: 6px; height: 6px; background: #06b6d4; border-radius: 50%; animation: pulse 2s infinite;
+}
+.nludo-lobby-title {
+  font-size: clamp(1.4rem, 4vw, 2rem); font-weight: 900; letter-spacing: -0.03em; color: #fff; margin-bottom: 4px;
+}
+.nludo-lobby-subtitle { color: #94a3b8; font-size: clamp(0.78rem, 2vw, 0.88rem); }
+
+.nludo-section { display: flex; flex-direction: column; gap: 10px; }
+.nludo-section-label {
+  font-size: 0.65rem; font-weight: 800; letter-spacing: 0.18em; text-transform: uppercase; color: #64748b;
+}
+
+.nludo-presets-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+.nludo-preset-btn {
+  padding: 10px 14px;
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.09);
+  background: rgba(255,255,255,0.03);
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.nludo-preset-btn:hover {
+  border-color: rgba(59,130,246,0.5);
+  background: rgba(59,130,246,0.12);
+  color: #fff;
+}
+
+.nludo-mode-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.nludo-mode-btn {
+  display: flex; align-items: center; justify-content: flex-start; gap: 12px; padding: 12px 16px; min-height: 52px;
+  border-radius: 14px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04);
+  color: #94a3b8; text-align: left; cursor: pointer; transition: all 0.2s;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.nludo-mode-btn:hover { border-color: rgba(255,255,255,0.25); color: #fff; }
+.nludo-mode-btn.active {
+  border-color: rgba(6,182,212,0.55); background: rgba(6,182,212,0.12); color: #06b6d4;
+  box-shadow: 0 0 16px rgba(6,182,212,0.2);
+}
+.nludo-mode-icon { font-size: 1.4rem; flex-shrink: 0; }
+.nludo-mode-name { display: block; font-size: 0.88rem; font-weight: 800; color: #fff; }
+.nludo-mode-sub { display: block; font-size: 0.65rem; opacity: 0.75; color: #94a3b8; }
+
+.nludo-count-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.nludo-count-btn {
+  flex: 1 1 70px; min-width: 60px; min-height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 10px 6px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04); color: #94a3b8; font-size: 1.05rem; font-weight: 800;
+  cursor: pointer; transition: all 0.2s; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.nludo-count-btn:hover { border-color: rgba(255,255,255,0.25); color: #fff; }
+.nludo-count-btn.active {
+  border-color: rgba(6,182,212,0.55); background: rgba(6,182,212,0.12); color: #06b6d4;
+  box-shadow: 0 0 14px rgba(6,182,212,0.15);
+}
+.nludo-count-label { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.05em; margin-top: 2px; color: currentColor; opacity: 0.8; }
+
+.nludo-roster-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+}
+.nludo-roster-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  min-height: 48px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: all 0.2s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.nludo-roster-card:hover {
+  background: rgba(255,255,255,0.06);
+  transform: translateY(-1px);
+}
+.nludo-roster-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nludo-roster-name {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #fff;
+}
+.nludo-roster-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+.nludo-roster-badge.human {
+  color: #38bdf8;
+}
+.nludo-roster-badge.bot {
+  color: #a855f7;
+}
+
+.nludo-diff-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+.nludo-diff-btn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 10px 6px; min-height: 48px;
+  border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.03);
+  color: #94a3b8; cursor: pointer; transition: all 0.2s; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.nludo-diff-btn:hover { border-color: rgba(255,255,255,0.2); color: #fff; }
+.nludo-diff-btn.active {
+  border-color: rgba(168,85,247,0.55); background: rgba(168,85,247,0.12); color: #a855f7;
+  box-shadow: 0 0 14px rgba(168,85,247,0.2);
+}
+.nludo-diff-name { font-size: 0.8rem; font-weight: 800; }
+.nludo-diff-desc { font-size: 0.6rem; opacity: 0.75; }
+
+.nludo-start-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%;
+  padding: 14px 20px; min-height: 52px; border-radius: 14px; border: none;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4);
+  color: #fff; font-size: 1rem; font-weight: 900; letter-spacing: 0.04em; cursor: pointer;
+  transition: all 0.2s; box-shadow: 0 0 24px rgba(59,130,246,0.4);
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.nludo-start-btn:hover { transform: translateY(-2px); box-shadow: 0 0 36px rgba(59,130,246,0.6); }
+
+/* ── GAME LAYOUT ── */
+.nludo-game-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 20px;
+  padding: 20px;
+  box-sizing: border-box;
+  align-items: start;
+  width: 100%;
+}
+
+@media (max-width: 960px) {
+  .nludo-game-layout {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .nludo-game-layout {
+    padding: 10px;
+    gap: 12px;
+  }
+}
+
+/* ── BOARD AREA & WRAP ── */
+.nludo-board-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.nludo-board-wrap {
+  width: 100%;
+  max-width: min(100%, 560px);
+  aspect-ratio: 1 / 1;
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(59,130,246,0.15), 0 0 80px rgba(168,85,247,0.08), inset 0 0 30px rgba(0,0,0,0.3);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 640px) {
+  .nludo-board-wrap {
+    max-width: min(100%, calc(100vw - 28px), 440px);
+    border-radius: 12px;
+  }
+}
+
+.nludo-board-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+/* ── Mobile Turn Header (Clean status only, no duplicate dice) ── */
+.nludo-mobile-turn-bar {
+  display: none;
+  width: 100%;
+  max-width: min(100%, 560px);
+  margin-bottom: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 14px;
+  padding: 10px 14px;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+@media (max-width: 960px) {
+  .nludo-mobile-turn-bar {
+    display: flex;
+  }
+}
+
+.nludo-mobile-turn-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.nludo-mobile-status {
+  font-size: 0.76rem;
+  color: #94a3b8;
+  width: 100%;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+/* ── Token Animations & Rings ── */
+@keyframes nludo-token-pulse-anim {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.12; }
+}
+.nludo-token-pulse {
+  animation: nludo-token-pulse-anim 1.2s ease-in-out infinite;
+}
+
+@keyframes nludo-token-ring-spin {
+  from { stroke-dashoffset: 0; }
+  to { stroke-dashoffset: 10; }
+}
+.nludo-token-ring {
+  animation: nludo-token-ring-spin 1.8s linear infinite;
+}
+
+/* ── Capture Banner (Clear Slow-Mo Overlay with Colors) ── */
+.nludo-capture-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 25;
+  background: rgba(12, 16, 30, 0.95);
+  border: 1px solid rgba(239, 68, 68, 0.6);
+  border-radius: 18px;
+  padding: 16px 22px;
+  text-align: center;
+  box-shadow: 0 0 35px rgba(239, 68, 68, 0.35), 0 0 70px rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  animation: nludo-banner-pop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  pointer-events: none;
+  width: 85%;
+  max-width: 380px;
+}
+@keyframes nludo-banner-pop {
+  0% { transform: translate(-50%, -50%) scale(0.75); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+.nludo-capture-title {
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #ef4444;
+  text-shadow: 0 0 12px rgba(239, 68, 68, 0.6);
+  margin-bottom: 4px;
+}
+.nludo-capture-desc {
+  font-size: 0.92rem;
+  color: #fff;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+.nludo-capture-sub {
+  font-size: 0.72rem;
+  color: #38bdf8;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* ── SIDEBAR ── */
+.nludo-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.nludo-turn-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+@media (max-width: 960px) {
+  .nludo-turn-card {
+    display: none;
+  }
+}
+.nludo-turn-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.nludo-turn-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; animation: pulse 1.5s infinite; }
+.nludo-turn-name { font-size: 0.95rem; font-weight: 800; flex: 1; }
+.nludo-turn-type {
+  font-size: 0.6rem; font-weight: 800; letter-spacing: 0.15em; color: #64748b;
+  background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 999px; text-transform: uppercase;
+}
+.nludo-status-msg { font-size: 0.8rem; color: #94a3b8; line-height: 1.5; }
+
+.nludo-dice-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.nludo-dice-wrap { width: 68px; height: 68px; }
+.nludo-dice { width: 100%; height: 100%; border-radius: 16px; transition: transform 0.1s; }
+.nludo-dice.rolling { animation: nludo-dice-spin 0.4s ease-out; }
+@keyframes nludo-dice-spin {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(-15deg) scale(1.1); }
+  50% { transform: rotate(15deg) scale(0.9); }
+  75% { transform: rotate(-8deg) scale(1.05); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+.nludo-dice-val { font-size: 0.75rem; color: #64748b; font-weight: 600; }
+.nludo-roll-btn {
+  width: 100%;
+  padding: 12px;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 1px solid rgba(59,130,246,0.4);
+  background: linear-gradient(135deg, rgba(59,130,246,0.25), rgba(37,99,235,0.4));
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 0 16px rgba(59,130,246,0.15);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.nludo-roll-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 0 24px rgba(59,130,246,0.35); }
+.nludo-roll-btn:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.nludo-hint { font-size: 0.74rem; color: #06b6d4; text-align: center; animation: pulse 2s infinite; }
+
+.nludo-players-card,
+.nludo-log-card {
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+.nludo-card-title {
+  font-size: 0.75rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; margin-bottom: 12px;
+}
+.nludo-player-list { display: flex; flex-direction: column; gap: 8px; }
+.nludo-player-row {
+  padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(10,10,10,0.2); display: flex; flex-direction: column; gap: 6px; transition: border-color 0.2s;
+}
+.nludo-player-row.active { background: rgba(255,255,255,0.05); }
+.nludo-player-info { display: flex; align-items: center; gap: 8px; }
+.nludo-player-color { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.nludo-player-name { font-size: 0.85rem; font-weight: 700; flex: 1; }
+.nludo-bot-tag {
+  font-size: 0.58rem; font-weight: 800; letter-spacing: 0.1em; color: #64748b;
+  background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 999px;
+}
+.nludo-token-bars { display: flex; gap: 6px; }
+.nludo-bar-item { flex: 1; font-size: 0.65rem; font-weight: 700; text-align: center; padding: 3px 4px; border-radius: 6px; background: rgba(255,255,255,0.04); }
+.nludo-bar-base { color: #64748b; }
+.nludo-bar-track { color: #06b6d4; }
+.nludo-bar-lane { color: #a855f7; }
+.nludo-bar-done { color: #22c55e; }
+
+.nludo-log-list { display: flex; flex-direction: column; gap: 6px; max-height: 160px; overflow-y: auto; }
+.nludo-log-entry {
+  padding: 7px 10px; border-radius: 8px; background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05); font-size: 0.74rem; color: #94a3b8; line-height: 1.4;
+}
+.nludo-log-empty { font-size: 0.74rem; color: #475569; font-style: italic; }
+
+.nludo-controls-row { display: flex; gap: 8px; }
+.nludo-ctrl-btn {
+  flex: 1; padding: 10px 6px; min-height: 42px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04); color: #94a3b8; font-size: 0.74rem; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; text-align: center;
+  touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.nludo-ctrl-btn:hover { border-color: rgba(255,255,255,0.22); color: #fff; }
+.nludo-ctrl-btn.active { border-color: rgba(6,182,212,0.5); background: rgba(6,182,212,0.12); color: #06b6d4; }
+
+/* ── HOW TO PLAY MODAL ── */
+.nludo-modal-backdrop {
+  position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center;
+  padding: 16px; background: rgba(0,0,0,0.85); backdrop-filter: blur(16px);
+  box-sizing: border-box;
+}
+.nludo-modal-card {
+  position: relative; width: 100%; max-width: 480px; max-height: 85vh; overflow-y: auto;
+  padding: clamp(18px, 4vw, 28px); border-radius: 24px; background: rgba(12,14,28,0.98);
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.8), 0 0 40px rgba(59,130,246,0.15);
+  box-sizing: border-box;
+}
+.nludo-modal-close {
+  position: absolute; top: 14px; right: 14px; width: 36px; height: 36px; border-radius: 50%;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.7); font-size: 1.3rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  touch-action: manipulation;
+}
+.nludo-modal-close:hover { background: rgba(255,255,255,0.15); color: #fff; }
+.nludo-modal-title { font-size: clamp(1.2rem, 3.5vw, 1.4rem); font-weight: 900; letter-spacing: -0.02em; margin-bottom: 18px; color: #fff; }
+.nludo-rules { display: flex; flex-direction: column; gap: 12px; }
+.nludo-rule { display: flex; gap: 12px; align-items: flex-start; }
+.nludo-rule-num {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: rgba(59,130,246,0.15); border: 1px solid rgba(59,130,246,0.3);
+  color: #3b82f6; font-size: 0.85rem; font-weight: 900;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.nludo-rule strong { display: block; font-size: 0.88rem; font-weight: 800; color: #fff; margin-bottom: 2px; }
+.nludo-rule p { font-size: 0.78rem; color: #94a3b8; line-height: 1.45; }
+.nludo-modal-ok {
+  margin-top: 18px; width: 100%; padding: 12px; min-height: 48px; border-radius: 12px; border: none;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4); color: #fff;
+  font-size: 0.95rem; font-weight: 800; cursor: pointer; transition: all 0.2s;
+  touch-action: manipulation;
+}
+.nludo-modal-ok:hover { transform: translateY(-2px); box-shadow: 0 0 20px rgba(59,130,246,0.4); }
+
+/* ── VICTORY ── */
+.nludo-victory {
+  position: relative; display: flex; align-items: center; justify-content: center; min-height: 520px; overflow: hidden;
+  padding: 24px; box-sizing: border-box;
+}
+.nludo-victory-glow {
+  position: absolute; width: 400px; height: 400px; border-radius: 50%; opacity: 0.12; filter: blur(100px);
+  top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none;
+}
+.nludo-victory-content {
+  position: relative; z-index: 2; text-align: center; padding: 24px; max-width: 420px; width: 100%;
+  box-sizing: border-box;
+}
+.nludo-victory-trophy { font-size: clamp(3rem, 8vw, 4rem); margin-bottom: 12px; animation: nludo-trophy-bounce 1s ease-out; }
+@keyframes nludo-trophy-bounce {
+  0% { transform: scale(0) rotate(-10deg); opacity: 0; }
+  60% { transform: scale(1.2) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+.nludo-victory-title { font-size: clamp(1.6rem, 5vw, 2rem); font-weight: 900; letter-spacing: -0.03em; margin-bottom: 6px; }
+.nludo-victory-sub { font-size: 0.85rem; color: #94a3b8; margin-bottom: 20px; }
+.nludo-victory-standings {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; text-align: left;
+}
+.nludo-standing-row { display: flex; align-items: center; gap: 10px; }
+.nludo-standing-pos { font-size: 0.75rem; font-weight: 800; color: #64748b; width: 24px; }
+.nludo-standing-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.nludo-standing-name { font-size: 0.88rem; font-weight: 700; flex: 1; }
+.nludo-standing-score { font-size: 0.75rem; color: #64748b; }
+.nludo-victory-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+.nludo-play-again-btn {
+  flex: 1 1 140px; padding: 12px; min-height: 48px; border-radius: 12px; border: none;
+  background: linear-gradient(135deg, #3b82f6, #06b6d4); color: #fff;
+  font-size: 0.95rem; font-weight: 800; cursor: pointer; transition: all 0.2s;
+  touch-action: manipulation;
+}
+.nludo-play-again-btn:hover { transform: translateY(-2px); box-shadow: 0 0 20px rgba(59,130,246,0.4); }
+.nludo-new-game-btn {
+  flex: 1 1 140px; padding: 12px; min-height: 48px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06); color: #fff; font-size: 0.95rem; font-weight: 700;
+  cursor: pointer; transition: all 0.2s; touch-action: manipulation;
+}
+.nludo-new-game-btn:hover { background: rgba(255,255,255,0.1); }
+
+@media (max-width: 767px) {
+  .pb-20-mobile { padding-bottom: 80px; }
+}
+

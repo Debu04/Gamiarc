@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import Link from 'next/link';
 
 export default function UpcomingModal({ isOpen, onClose, featureName = 'Feature' }) {
@@ -27,6 +26,7 @@ export default function UpcomingModal({ isOpen, onClose, featureName = 'Feature'
   const modalContent = (
     <div
       className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md transition-all"
+      style={{ zIndex: 99999 }}
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -36,7 +36,6 @@ export default function UpcomingModal({ isOpen, onClose, featureName = 'Feature'
         style={{ maxWidth: '340px' }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
         <button
           onClick={onClose}
           aria-label="Close modal"
@@ -55,6 +54,7 @@ export default function UpcomingModal({ isOpen, onClose, featureName = 'Feature'
             cursor: 'pointer',
             color: 'rgba(255,255,255,0.6)',
             flexShrink: 0,
+            pointerEvents: 'auto'
           }}
         >
           <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -95,7 +95,7 @@ export default function UpcomingModal({ isOpen, onClose, featureName = 'Feature'
         </p>
 
         {/* Action Buttons */}
-        <div className="flex flex-col gap-2.5 justify-center w-full">
+        <div className="flex flex-col gap-2.5 justify-center w-full" style={{ pointerEvents: 'auto' }}>
           <button
             onClick={onClose}
             className="w-full px-5 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-white text-xs font-semibold border border-white/10 transition-all"
@@ -117,5 +117,5 @@ export default function UpcomingModal({ isOpen, onClose, featureName = 'Feature'
     </div>
   );
 
-  return createPortal(modalContent, document.body);
+  return modalContent;
 }

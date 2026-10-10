@@ -3,8 +3,8 @@
 import Link from 'next/link';
 
 export default function GameCard({ game, variant = 'standard' }) {
-  // Only Neon Tic-Tac-Toe is currently published & playable
-  const isAvailable = game.id === 'tic-tac-toe' && game.status === 'published';
+  // Published games that are playable
+  const isAvailable = game.status === 'published';
   const playUrl = isAvailable ? game.route : '#';
 
   const accentColor = game.accentColor || '#3b82f6';
