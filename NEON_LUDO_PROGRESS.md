@@ -20,12 +20,23 @@ The old experimental 5–7 player polygonal corridor boards have been removed in
   - **Home Lanes**: 5-cell colored home tracks entering inward toward the center with stars (`★`) and entrance arrows (`▼`).
   - **Base Zones**: Translucent neon pods matching 4-player corner bases (`fill={def.homeColor}`, `stroke={def.glowColor}`, uppercase labels, and dotted `strokeDasharray="3 3"` nests).
   - **Center Nexus**: 8 triangular segments in player neon tints meeting in the center with a glowing center star (`★`).
-- **Flexible Player Scalability**:
-  - **5 Players**: Green, Orange, Red, Purple, Cyan.
-  - **6 Players**: Green, Orange, Red, Purple, Cyan, Black (Dark Slate).
-  - **7 Players**: Green, Orange, Red, Purple, Cyan, Black, Pink.
-  - **8 Players**: All 8 arms active (including Gold/Yellow).
-  - Inactive arms (when playing 5–7 players) have empty bases with subtle dim borders, keeping the board natural and uncrowded.
+- **Consistent Clockwise Color Progression (Always Starts with Red)**:
+  - Every match on every board starts with **Red** as Player 1 (Index 0).
+  - Clockwise rotation follows the geometric arm order without shuffling:
+    - **2 Players**: Red, Yellow
+    - **3 Players**: Red, Blue, Yellow
+    - **4 Players**: Red, Blue, Yellow, Green (the 4 classic Ludo colors)
+    - **5 Players**: Red, Blue, Yellow, Green, Orange
+    - **6 Players**: Red, Blue, Yellow, Green, Orange, Purple
+    - **7 Players**: Red, Blue, Yellow, Green, Orange, Purple, Cyan
+    - **8 Players**: Red, Blue, Yellow, Green, Orange, Purple, Cyan, Pink (Rose)
+  - Existing colors are strictly preserved and never reshuffled when players are added or removed.
+- **High-Visibility Electric Blue & Vibrant Palette**:
+  - Removed muddy/dark black shades that reduced visibility in 7-player matches.
+  - Blue updated to vibrant neon `#3b82f6` / `#60a5fa` glow for crystal-clear readability across all devices.
+- **Dynamic Turn-Colored Dice & Roll Button**:
+  - The dice face border and pips dynamically match the active player's color and glow.
+  - The "Roll Dice" button dynamically matches the active player's neon color gradient, glowing border, and displays the active player's name (e.g. `🎲 Roll Dice (Red)`).
 - **96-Cell Continuous Circuit**:
   - 12 cells per arm sector ($8 \times 12 = 96$ cells).
   - Home stretch starts at progress 96, exact roll required to bear off at progress 101.
@@ -33,9 +44,10 @@ The old experimental 5–7 player polygonal corridor boards have been removed in
 
 ### 2. Classic 4-Player Board (2, 3 & 4 Players)
 - Authentic 15x15 cross grid with 52 track cells and 4 corner bases.
-- 2 players use opposite colors (Red & Yellow).
+- 2 players use Red & Yellow.
 - 3 players use Red, Blue, Yellow.
 - 4 players use Red, Blue, Yellow, Green.
+- Always starts with Red and rotates clockwise.
 - Fully preserved and untouched.
 
 ### 3. Gameplay Mechanics & Engine Features
@@ -51,15 +63,17 @@ The old experimental 5–7 player polygonal corridor boards have been removed in
 
 | File | Changes Made |
 | --- | --- |
-| `components/games/NeonLudoGame.jsx` | Removed `buildMultiBoardGeometry` and `BoardMultiPlayer`; unified 5, 6, 7, and 8 player modes to use `Board8PlayerOctagon`; restyled `Board8PlayerOctagon` to match the exact dark neon cyberpunk aesthetic and colors of `Board4Player`; updated engine rules (96-cell track for $\ge 5$ players); updated lobby roster and subtitles. |
+| `components/games/NeonLudoGame.jsx` | Standardized turn order to always start with Red; established unshuffled additive color roster for 2–8 players (`Red`, `Blue`, `Yellow`, `Green`, `Orange`, `Purple`, `Cyan`, `Pink`); fixed Blue visibility with vibrant neon electric blue (`#3b82f6`); integrated dynamic turn-colored styling for dice pips, dice border, and "Roll Dice" button with active player name. |
 | `app/games/Gamiarc_ludo/ludo.css` | Ensured 1:1 square aspect ratio for both boards on mobile, tablet, and desktop (`aspect-ratio: 1 / 1`); removed `.is-rect` override. |
 | `NEON_LUDO_PROGRESS.md` | Updated progress and architecture documentation. |
 
 ---
 
 ## Verification & Status
+- [x] **Always Starts with Red**: In every match and player count (2–8), Player 1 is Red and takes the first turn.
+- [x] **Clockwise Unshuffled Color Order**: Follows `Red -> Blue -> Yellow -> Green -> Orange -> Purple -> Cyan -> Pink`. Adding players appends new colors without altering existing assignments.
+- [x] **High Visibility Blue in 7P**: Replaced dark slate with electric neon blue (`#3b82f6`), visible on both dark board backgrounds and mobile screens.
+- [x] **Dynamic Dice & Roll Button Colors**: Dice border, pips, and "Roll Dice" button change color and glow according to the active turn player.
 - [x] **Consolidated Architecture**: Only 2 board modes exist (`Board4Player` for 2–4 players, `Board8PlayerOctagon` for 5–8 players).
-- [x] **Visual Consistency**: Both boards share identical `#0b0f19` canvas, translucent neon base pods, cell borders, glowing safe stars, home lanes, and center nexus.
-- [x] **Clean Removal**: Old polygonal corridor board (`BoardMultiPlayer` and `buildMultiBoardGeometry`) completely removed.
 - [x] **Mobile Touch Ergonomics**: 1:1 aspect ratio fills phone screens completely; oversized invisible hit targets ($r=22$) for responsive tapping.
 - [x] **Production Build**: Clean compilation with exit code 0 (`next build`).

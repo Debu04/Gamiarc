@@ -7,15 +7,14 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 // ============================================================
 
 const PLAYER_DEFS = {
-  red:    { label: 'Red',    colorHex: '#ef4444', homeColor: 'rgba(239,68,68,0.35)',    glowColor: 'rgba(239,68,68,0.6)' },
-  orange: { label: 'Orange', colorHex: '#f97316', homeColor: 'rgba(249,115,22,0.35)',  glowColor: 'rgba(249,115,22,0.6)' },
-  yellow: { label: 'Gold',   colorHex: '#eab308', homeColor: 'rgba(234,179,8,0.35)',   glowColor: 'rgba(234,179,8,0.6)' },
-  green:  { label: 'Green',  colorHex: '#22c55e', homeColor: 'rgba(34,197,94,0.35)',   glowColor: 'rgba(34,197,94,0.6)' },
-  cyan:   { label: 'Cyan',   colorHex: '#06b6d4', homeColor: 'rgba(6,182,212,0.35)',   glowColor: 'rgba(6,182,212,0.6)' },
-  blue:   { label: 'Blue',   colorHex: '#3b82f6', homeColor: 'rgba(59,130,246,0.35)',  glowColor: 'rgba(59,130,246,0.6)' },
-  purple: { label: 'Purple', colorHex: '#a855f7', homeColor: 'rgba(168,85,247,0.35)',  glowColor: 'rgba(168,85,247,0.6)' },
-  dark:   { label: 'Black',  colorHex: '#334155', homeColor: 'rgba(30,41,59,0.55)',    glowColor: 'rgba(148,163,184,0.7)', accentHex: '#94a3b8' },
-  rose:   { label: 'Pink',   colorHex: '#ec4899', homeColor: 'rgba(236,72,153,0.35)', glowColor: 'rgba(236,72,153,0.6)' },
+  red:    { label: 'Red',    colorHex: '#ef4444', homeColor: 'rgba(239,68,68,0.35)',   glowColor: 'rgba(239,68,68,0.75)' },
+  blue:   { label: 'Blue',   colorHex: '#3b82f6', homeColor: 'rgba(59,130,246,0.35)',  glowColor: 'rgba(59,130,246,0.75)', accentHex: '#60a5fa' },
+  yellow: { label: 'Yellow', colorHex: '#eab308', homeColor: 'rgba(234,179,8,0.35)',  glowColor: 'rgba(234,179,8,0.75)' },
+  green:  { label: 'Green',  colorHex: '#22c55e', homeColor: 'rgba(34,197,94,0.35)',  glowColor: 'rgba(34,197,94,0.75)' },
+  orange: { label: 'Orange', colorHex: '#f97316', homeColor: 'rgba(249,115,22,0.35)', glowColor: 'rgba(249,115,22,0.75)' },
+  purple: { label: 'Purple', colorHex: '#a855f7', homeColor: 'rgba(168,85,247,0.35)', glowColor: 'rgba(168,85,247,0.75)' },
+  cyan:   { label: 'Cyan',   colorHex: '#06b6d4', homeColor: 'rgba(6,182,212,0.35)',  glowColor: 'rgba(6,182,212,0.75)' },
+  rose:   { label: 'Pink',   colorHex: '#ec4899', homeColor: 'rgba(236,72,153,0.35)', glowColor: 'rgba(236,72,153,0.75)' },
 };
 
 // 4-Player Starts & Safe Cells (52 track cells)
@@ -358,10 +357,10 @@ function Lobby({ onStart }) {
     if (playerCount === 2) return ['red', 'yellow'];
     if (playerCount === 3) return ['red', 'blue', 'yellow'];
     if (playerCount === 4) return ['red', 'blue', 'yellow', 'green'];
-    if (playerCount === 5) return ['red', 'orange', 'yellow', 'green', 'cyan'];
-    if (playerCount === 6) return ['red', 'orange', 'yellow', 'green', 'cyan', 'purple'];
-    if (playerCount === 7) return ['red', 'orange', 'yellow', 'green', 'cyan', 'blue', 'purple'];
-    return ['green', 'orange', 'red', 'purple', 'cyan', 'dark', 'rose', 'yellow'];
+    if (playerCount === 5) return ['red', 'blue', 'yellow', 'green', 'orange'];
+    if (playerCount === 6) return ['red', 'blue', 'yellow', 'green', 'orange', 'purple'];
+    if (playerCount === 7) return ['red', 'blue', 'yellow', 'green', 'orange', 'purple', 'cyan'];
+    return ['red', 'blue', 'yellow', 'green', 'orange', 'purple', 'cyan', 'rose'];
   }, [playerCount]);
 
   const activeIds = getActivePlayerIds();
@@ -636,7 +635,7 @@ function VictoryScreen({ winner, players, playerCount, onPlayAgain, onNewGame })
 // DICE COMPONENT
 // ============================================================
 
-function DiceFace({ value, rolling }) {
+function DiceFace({ value, rolling, colorHex, glowColor }) {
   const dotPositions = {
     1: [[50, 50]],
     2: [[25, 25], [75, 75]],
@@ -646,18 +645,28 @@ function DiceFace({ value, rolling }) {
     6: [[25, 20], [75, 20], [25, 50], [75, 50], [25, 80], [75, 80]],
   };
   const dots = dotPositions[value] || dotPositions[1];
+  const strokeColor = colorHex || '#3b82f6';
+  const shadowColor = glowColor || 'rgba(59,130,246,0.6)';
 
   return (
     <div className={`nludo-dice ${rolling ? 'rolling' : ''}`}>
       <svg viewBox="0 0 100 100" width="100%" height="100%">
         <rect
           x="3" y="3" width="94" height="94" rx="18" ry="18"
-          fill="rgba(15,23,42,0.95)"
-          stroke="rgba(59,130,246,0.6)"
-          strokeWidth="3"
+          fill="rgba(15,23,42,0.96)"
+          stroke={strokeColor}
+          strokeWidth="3.5"
+          style={{ filter: `drop-shadow(0 0 10px ${shadowColor})` }}
         />
         {dots.map(([cx, cy], i) => (
-          <circle key={i} cx={cx} cy={cy} r="9" fill="#ffffff" style={{ filter: 'drop-shadow(0 0 4px #38bdf8)' }} />
+          <circle
+            key={i}
+            cx={cx}
+            cy={cy}
+            r="9"
+            fill={colorHex || '#ffffff'}
+            style={{ filter: `drop-shadow(0 0 6px ${shadowColor})` }}
+          />
         ))}
       </svg>
     </div>
@@ -943,7 +952,7 @@ function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick, p
 // Cyberpunk / Neon Design System Harmonized with 4-Player Board
 // ============================================================
 
-const BASE_ARM_IDS_8 = ['green', 'orange', 'red', 'purple', 'cyan', 'dark', 'rose', 'yellow'];
+const BASE_ARM_IDS_8 = ['red', 'blue', 'yellow', 'green', 'orange', 'purple', 'cyan', 'rose'];
 
 function build8BoardGeometry() {
   const angles = [];
@@ -1682,6 +1691,7 @@ export default function NeonLudoGame() {
   useEffect(() => () => clearTimer(), []);
 
   const currentPlayer = players[currentIdx];
+  const curDef = currentPlayer ? PLAYER_DEFS[currentPlayer.id] : null;
   const activePlayerCount = config?.playerCount || 4;
   const isMulti = activePlayerCount >= 5;
   const homeStart = getHomeStretchStart(activePlayerCount);
@@ -1795,13 +1805,24 @@ export default function NeonLudoGame() {
             <p className="nludo-status-msg">{statusMsg}</p>
           </div>
 
-          {/* Dedicated Dice Card */}
-          <div className="nludo-dice-card">
+          {/* Dedicated Dice Card with Dynamic Turn Colors */}
+          <div
+            className="nludo-dice-card"
+            style={curDef ? { borderColor: `${curDef.colorHex}60`, boxShadow: `0 0 24px ${curDef.glowColor}25` } : {}}
+          >
             <div className="nludo-dice-wrap">
-              <DiceFace value={diceValue || 1} rolling={diceRolling} />
+              <DiceFace
+                value={diceValue || 1}
+                rolling={diceRolling}
+                colorHex={curDef?.colorHex}
+                glowColor={curDef?.glowColor}
+              />
             </div>
-            <div className="nludo-dice-val">
-              {diceValue ? `Rolled: ${diceValue}` : 'Roll to start'}
+            <div
+              className="nludo-dice-val"
+              style={{ color: curDef ? curDef.colorHex : '#64748b', fontWeight: 800 }}
+            >
+              {diceValue ? `Rolled: ${diceValue}` : `${currentPlayer?.label || 'Player'}'s turn`}
             </div>
             <button
               type="button"
@@ -1809,11 +1830,28 @@ export default function NeonLudoGame() {
               onClick={doRollDice}
               disabled={phase !== 'roll' || currentPlayer?.isBot}
               aria-label="Roll Dice"
+              style={curDef && phase === 'roll' && !currentPlayer?.isBot ? {
+                background: `linear-gradient(135deg, ${curDef.colorHex}55, ${curDef.colorHex}cc)`,
+                borderColor: curDef.colorHex,
+                boxShadow: `0 0 20px ${curDef.glowColor}, 0 0 40px ${curDef.glowColor}`,
+                color: '#ffffff',
+                textShadow: '0 0 8px rgba(0,0,0,0.9)',
+                fontWeight: 900,
+              } : curDef ? {
+                borderColor: `${curDef.colorHex}50`,
+                color: '#ffffff',
+              } : {}}
             >
-              {diceRolling ? 'Rolling...' : diceValue && phase === 'move' ? `Rolled ${diceValue}` : '🎲 Roll Dice'}
+              {diceRolling
+                ? 'Rolling...'
+                : diceValue && phase === 'move'
+                ? `Rolled ${diceValue}`
+                : `🎲 Roll Dice (${currentPlayer?.label || ''})`}
             </button>
             {phase === 'move' && !currentPlayer?.isBot && (
-              <p className="nludo-hint">Tap a highlighted token to move (or press 1–4)</p>
+              <p className="nludo-hint" style={{ color: curDef?.colorHex || '#06b6d4' }}>
+                Tap a highlighted token to move (or press 1–4)
+              </p>
             )}
           </div>
 
