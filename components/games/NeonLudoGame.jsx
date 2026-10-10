@@ -3,17 +3,19 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 // ============================================================
-// LUDO CONSTANTS & 2–7 PLAYER ENGINE
+// LUDO CONSTANTS & 2–8 PLAYER ENGINE
 // ============================================================
 
 const PLAYER_DEFS = {
   red:    { label: 'Red',    colorHex: '#ef4444', homeColor: 'rgba(239,68,68,0.35)',    glowColor: 'rgba(239,68,68,0.6)' },
   orange: { label: 'Orange', colorHex: '#f97316', homeColor: 'rgba(249,115,22,0.35)',  glowColor: 'rgba(249,115,22,0.6)' },
-  yellow: { label: 'Yellow', colorHex: '#eab308', homeColor: 'rgba(234,179,8,0.35)',   glowColor: 'rgba(234,179,8,0.6)' },
+  yellow: { label: 'Gold',   colorHex: '#eab308', homeColor: 'rgba(234,179,8,0.35)',   glowColor: 'rgba(234,179,8,0.6)' },
   green:  { label: 'Green',  colorHex: '#22c55e', homeColor: 'rgba(34,197,94,0.35)',   glowColor: 'rgba(34,197,94,0.6)' },
   cyan:   { label: 'Cyan',   colorHex: '#06b6d4', homeColor: 'rgba(6,182,212,0.35)',   glowColor: 'rgba(6,182,212,0.6)' },
   blue:   { label: 'Blue',   colorHex: '#3b82f6', homeColor: 'rgba(59,130,246,0.35)',  glowColor: 'rgba(59,130,246,0.6)' },
   purple: { label: 'Purple', colorHex: '#a855f7', homeColor: 'rgba(168,85,247,0.35)',  glowColor: 'rgba(168,85,247,0.6)' },
+  dark:   { label: 'Black',  colorHex: '#334155', homeColor: 'rgba(30,41,59,0.55)',    glowColor: 'rgba(148,163,184,0.7)', accentHex: '#94a3b8' },
+  rose:   { label: 'Pink',   colorHex: '#ec4899', homeColor: 'rgba(236,72,153,0.35)', glowColor: 'rgba(236,72,153,0.6)' },
 };
 
 // 4-Player Starts & Safe Cells (52 track cells)
@@ -42,6 +44,9 @@ function getSafeCellsSet(playerCount) {
   for (let i = 0; i < playerCount; i++) {
     safe.add(i * 12);     // Start cell outside base
     safe.add(i * 12 + 8); // Outward corridor safe star
+    if (playerCount === 8) {
+      safe.add(i * 12 + 11); // Outer safe bridge 'X' cell
+    }
   }
   return safe;
 }
@@ -413,6 +418,7 @@ function Lobby({ onStart }) {
     4: true,
     5: true,
     6: true,
+    7: true,
   });
 
   const getActivePlayerIds = useCallback(() => {
@@ -421,7 +427,8 @@ function Lobby({ onStart }) {
     if (playerCount === 4) return ['red', 'blue', 'yellow', 'green'];
     if (playerCount === 5) return ['red', 'orange', 'yellow', 'green', 'cyan'];
     if (playerCount === 6) return ['red', 'orange', 'yellow', 'green', 'cyan', 'purple'];
-    return ['red', 'orange', 'yellow', 'green', 'cyan', 'blue', 'purple'];
+    if (playerCount === 7) return ['red', 'orange', 'yellow', 'green', 'cyan', 'blue', 'purple'];
+    return ['green', 'orange', 'red', 'purple', 'cyan', 'dark', 'rose', 'yellow'];
   }, [playerCount]);
 
   const activeIds = getActivePlayerIds();
@@ -433,11 +440,11 @@ function Lobby({ onStart }) {
 
   function setPreset(preset) {
     if (preset === 'vs_bots') {
-      setSlotIsBot({ 0: false, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true });
+      setSlotIsBot({ 0: false, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true });
     } else if (preset === 'pass_play') {
-      setSlotIsBot({ 0: false, 1: false, 2: false, 3: false, 4: false, 5: false, 6: false });
+      setSlotIsBot({ 0: false, 1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false });
     } else if (preset === 'all_bots') {
-      setSlotIsBot({ 0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true });
+      setSlotIsBot({ 0: true, 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true });
     }
   }
 
@@ -450,7 +457,7 @@ function Lobby({ onStart }) {
             NEON LUDO
           </div>
           <h2 className="nludo-lobby-title">Match Setup</h2>
-          <p className="nludo-lobby-subtitle">Classic 2–4 players or 6–7 Player Ludo King style board.</p>
+          <p className="nludo-lobby-subtitle">Classic 2–4 players, 5–7 polygonal, or 8-Player Octagonal Star board.</p>
         </div>
 
         {/* Presets */}
@@ -502,7 +509,7 @@ function Lobby({ onStart }) {
         <div className="nludo-section">
           <p className="nludo-section-label">Player Count & Board Style</p>
           <div className="nludo-count-row">
-            {[2, 3, 4, 5, 6, 7].map(n => (
+            {[2, 3, 4, 5, 6, 7, 8].map(n => (
               <button
                 key={n}
                 type="button"
@@ -1277,6 +1284,438 @@ function BoardMultiPlayer({ players, currentPlayerId, movableTokens, onTokenClic
 }
 
 // ============================================================
+// 8-PLAYER RECTANGULAR BOARD GEOMETRY & COMPONENT
+// ============================================================
+
+// ============================================================
+// 8-PLAYER OCTAGONAL STAR BOARD GEOMETRY & COMPONENT (Authentic Ludo)
+// ============================================================
+
+function build8BoardGeometry() {
+  const angles = [];
+  for (let i = 0; i < 8; i++) {
+    angles.push(-Math.PI / 2 + i * (2 * Math.PI / 8));
+  }
+  const track = [];
+  const homeLanes = [];
+  const bases = [];
+  const arms = [];
+  const X0 = 360, Y0 = 360;
+
+  // 6 rows from r=112 to r=292
+  const rowRadii = [112, 148, 184, 220, 256, 292];
+  const colOffset = 23; // left=-23, mid=0, right=+23
+
+  for (let i = 0; i < 8; i++) {
+    const ang = angles[i];
+    const uX = Math.cos(ang), uY = Math.sin(ang);
+    const vX = -Math.sin(ang), vY = Math.cos(ang);
+
+    arms.push({
+      ang,
+      uX, uY, vX, vY,
+      armIndex: i,
+    });
+
+    // 12 track cells for sector i:
+    // Step 0: Row 5 of Right column (Start cell right outside base i)
+    // Steps 1-4: Rows 4 down to 1 of Right column (Inward corridor)
+    for (let r = 5; r >= 1; r--) {
+      const rad = rowRadii[r];
+      track.push({
+        x: X0 + rad * uX + colOffset * vX,
+        y: Y0 + rad * uY + colOffset * vY,
+        ang,
+        arm: i,
+        step: 5 - r,
+      });
+    }
+
+    // Step 5: Inner bridge near collar between Arm i and Arm (i+1)
+    const nextI = (i + 1) % 8;
+    const midAng = ang + Math.PI / 8;
+    track.push({
+      x: X0 + 92 * Math.cos(midAng),
+      y: Y0 + 92 * Math.sin(midAng),
+      ang: midAng,
+      arm: i,
+      step: 5,
+    });
+
+    // Steps 6-10: Outward along Left column of Arm (i+1) (Rows 1 up to 5)
+    const nAng = angles[nextI];
+    const nUx = Math.cos(nAng), nUy = Math.sin(nAng);
+    const nVx = -Math.sin(nAng), nVy = Math.cos(nAng);
+    for (let r = 1; r <= 5; r++) {
+      const rad = rowRadii[r];
+      track.push({
+        x: X0 + rad * nUx - colOffset * nVx,
+        y: Y0 + rad * nUy - colOffset * nVy,
+        ang: nAng,
+        arm: nextI,
+        step: 5 + r,
+      });
+    }
+
+    // Step 11: Outer bridge at Arm (i+1)'s Row 5 Middle column (marked with X)
+    track.push({
+      x: X0 + rowRadii[5] * nUx,
+      y: Y0 + rowRadii[5] * nUy,
+      ang: nAng,
+      arm: nextI,
+      step: 11,
+    });
+
+    // Home lane for player i: 5 cells inward along Middle column
+    // Rows 4 down to 0
+    const lane = [];
+    for (let r = 4; r >= 0; r--) {
+      const rad = rowRadii[r];
+      lane.push({
+        x: X0 + rad * uX,
+        y: Y0 + rad * uY,
+        ang,
+        step: 4 - r,
+      });
+    }
+    homeLanes.push(lane);
+
+    // Base for player i: in the wedge between Arm i and Arm (i+1)
+    const wAng = ang + Math.PI / 8;
+    const wUx = Math.cos(wAng), wUy = Math.sin(wAng);
+    const wVx = -Math.sin(wAng), wVy = Math.cos(wAng);
+    bases.push([
+      { x: X0 + 268 * wUx - 20 * wVx, y: Y0 + 268 * wUy - 20 * wVy },
+      { x: X0 + 268 * wUx + 20 * wVx, y: Y0 + 268 * wUy + 20 * wVy },
+      { x: X0 + 218 * wUx,            y: Y0 + 218 * wUy },
+      { x: X0 + 172 * wUx,            y: Y0 + 172 * wUy },
+    ]);
+  }
+
+  return { angles, track, homeLanes, bases, arms, rowRadii, colOffset };
+}
+
+function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenClick }) {
+  const geo = useMemo(() => build8BoardGeometry(), []);
+  const { angles, track, homeLanes, bases, arms, rowRadii } = geo;
+
+  const homeStart = 96;
+  const maxProg = 101;
+  const safeSet = useMemo(() => getSafeCellsSet(8), []);
+
+  const trackMap = new Map();
+  const homeLaneMap = {};
+  const baseMap = {};
+
+  players.forEach((p, pIdx) => {
+    homeLaneMap[p.id] = Array.from({ length: 5 }, () => []);
+    baseMap[p.id] = [];
+    p.tokens.forEach((t, ti) => {
+      if (t.progress === maxProg) return;
+      if (t.progress === -1) {
+        baseMap[p.id].push({ playerId: p.id, tokenIndex: ti, token: t });
+        return;
+      }
+      if (t.progress >= homeStart) {
+        const laneIdx = t.progress - homeStart;
+        if (laneIdx < 5) homeLaneMap[p.id][laneIdx].push({ playerId: p.id, tokenIndex: ti, token: t });
+        return;
+      }
+      const absPos = getAbsoluteTrackPos(p.id, t.progress, 8, pIdx);
+      if (!trackMap.has(absPos)) trackMap.set(absPos, []);
+      trackMap.get(absPos).push({ playerId: p.id, tokenIndex: ti, token: t });
+    });
+  });
+
+  const isMovable = (pid, ti) => pid === currentPlayerId && movableTokens.includes(ti);
+
+  // 16-gon outer rim points
+  const outerRimPts = [];
+  for (let k = 0; k < 16; k++) {
+    const a = -Math.PI / 2 + k * (2 * Math.PI / 16) - Math.PI / 16;
+    outerRimPts.push(`${360 + 352 * Math.cos(a)},${360 + 352 * Math.sin(a)}`);
+  }
+
+  // Central green octagon points (radius 56)
+  const greenOctPts = [];
+  for (let k = 0; k < 8; k++) {
+    const a = -Math.PI / 2 + k * (2 * Math.PI / 8) - Math.PI / 8;
+    greenOctPts.push(`${360 + 56 * Math.cos(a)},${360 + 56 * Math.sin(a)}`);
+  }
+
+  // Collar octagon points (radius 92)
+  const collarOctPts = [];
+  for (let k = 0; k < 8; k++) {
+    const a = -Math.PI / 2 + k * (2 * Math.PI / 8) - Math.PI / 8;
+    collarOctPts.push(`${360 + 92 * Math.cos(a)},${360 + 92 * Math.sin(a)}`);
+  }
+
+  return (
+    <svg viewBox="0 0 720 720" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" className="nludo-board-svg">
+      {/* Dark Board Field */}
+      <rect width="720" height="720" fill="#040711" rx="16" />
+
+      {/* 16-gon Outer Perimeter with Bold Blue Neon Rim */}
+      <polygon
+        points={outerRimPts.join(' ')}
+        fill="#000000"
+        stroke="#2563eb"
+        strokeWidth="4"
+        style={{ filter: 'drop-shadow(0 0 10px rgba(37,99,235,0.4))' }}
+      />
+
+      {/* 8 Base Wedges (Black grounds between arms with token clusters) */}
+      {bases.map((slots, pIdx) => {
+        const pObj = players[pIdx];
+        if (!pObj) return null;
+        const pid = pObj.id;
+        const def = PLAYER_DEFS[pid] || PLAYER_DEFS.red;
+        const tokens = baseMap[pid] || [];
+        const maxTokens = pObj.tokens.length;
+
+        // Label in wedge
+        const ang = angles[pIdx] + Math.PI / 8;
+        const lx = 360 + 318 * Math.cos(ang);
+        const ly = 360 + 318 * Math.sin(ang);
+
+        return (
+          <g key={`oct-base-wedge-${pid}`}>
+            {/* Player Label in Base Wedge */}
+            <text
+              x={lx}
+              y={ly}
+              textAnchor="middle"
+              fontSize="9"
+              fontWeight="900"
+              letterSpacing="0.1em"
+              fill={def.colorHex}
+              style={{ textTransform: 'uppercase', filter: `drop-shadow(0 0 4px ${def.glowColor})` }}
+            >
+              {def.label}
+            </text>
+
+            {/* Base Token Slots */}
+            {slots.slice(0, maxTokens).map((pt, slotIdx) => {
+              const tokenEntry = tokens[slotIdx];
+              return (
+                <g key={`oct-base-${pid}-${slotIdx}`}>
+                  <circle
+                    cx={pt.x}
+                    cy={pt.y}
+                    r="13.5"
+                    fill="rgba(10,14,24,0.6)"
+                    stroke={def.colorHex}
+                    strokeWidth="1.2"
+                    strokeDasharray="2 2"
+                    opacity="0.85"
+                  />
+                  {tokenEntry && (
+                    <TokenCircle
+                      pid={tokenEntry.playerId}
+                      ti={tokenEntry.tokenIndex}
+                      cx={pt.x}
+                      cy={pt.y}
+                      r={13}
+                      isMovable={isMovable}
+                      onTokenClick={onTokenClick}
+                    />
+                  )}
+                </g>
+              );
+            })}
+          </g>
+        );
+      })}
+
+      {/* 8 White Corridors (Arms) with Colored Borders, Stars, and 'X' Cells */}
+      {arms.map((arm, pIdx) => {
+        const pObj = players[pIdx];
+        const pid = pObj ? pObj.id : 'red';
+        const def = PLAYER_DEFS[pid] || PLAYER_DEFS.red;
+        const deg = (arm.ang * 180 / Math.PI) + 90;
+
+        return (
+          <g key={`oct-arm-${pIdx}`} transform={`translate(360, 360) rotate(${deg})`}>
+            {/* White Corridor Body */}
+            <rect
+              x="-34.5"
+              y="-312"
+              width="69"
+              height="218"
+              rx="3"
+              fill="#ffffff"
+              stroke={def.colorHex}
+              strokeWidth="2.5"
+              style={{ filter: `drop-shadow(0 0 6px ${def.glowColor})` }}
+            />
+
+            {/* 2 Longitudinal Divider Lines (3 columns) */}
+            <line x1="-11.5" y1="-312" x2="-11.5" y2="-94" stroke={def.colorHex} strokeWidth="1.2" opacity="0.65" />
+            <line x1="11.5" y1="-312" x2="11.5" y2="-94" stroke={def.colorHex} strokeWidth="1.2" opacity="0.65" />
+
+            {/* 5 Transverse Divider Lines (6 rows) */}
+            {[-276, -240, -204, -168, -132].map((yLine, li) => (
+              <line key={`arm-div-${li}`} x1="-34.5" y1={yLine} x2="34.5" y2={yLine} stroke={def.colorHex} strokeWidth="1.2" opacity="0.65" />
+            ))}
+
+            {/* Row 5 (Outermost) Middle Cell: Crossed 'X' Safe/Bridge Cell */}
+            <line x1="-10" y1="-310" x2="10" y2="-278" stroke={def.colorHex} strokeWidth="2.2" strokeLinecap="round" />
+            <line x1="10" y1="-310" x2="-10" y2="-278" stroke={def.colorHex} strokeWidth="2.2" strokeLinecap="round" />
+
+            {/* Row 5 (Outermost) Right Cell: Start Circle Indicator */}
+            <circle cx="23" cy="-294" r="7.5" fill={def.colorHex} opacity="0.85" />
+
+            {/* Middle Column Home Path Stars (Rows 4 down to 1) */}
+            {[-258, -222, -186, -150].map((starY, si) => (
+              <text
+                key={`home-star-${si}`}
+                x="0"
+                y={starY + 6.5}
+                textAnchor="middle"
+                fontSize="18"
+                fill={def.colorHex}
+                fontWeight="bold"
+                style={{ filter: `drop-shadow(0 0 2px ${def.colorHex})` }}
+              >
+                ★
+              </text>
+            ))}
+
+            {/* Row 0 Middle Cell: Entrance Arrow to Center */}
+            <text x="0" y="-108" textAnchor="middle" fontSize="12" fill={def.colorHex} opacity="0.8" fontWeight="bold">
+              ▼
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Central Collar (Octagonal Ring between arms and green center) */}
+      <polygon
+        points={collarOctPts.join(' ')}
+        fill="#040711"
+        stroke="#2563eb"
+        strokeWidth="2"
+      />
+      {angles.map((ang, i) => {
+        const midA = ang + Math.PI / 8;
+        const x1 = 360 + 56 * Math.cos(midA);
+        const y1 = 360 + 56 * Math.sin(midA);
+        const x2 = 360 + 92 * Math.cos(midA);
+        const y2 = 360 + 92 * Math.sin(midA);
+        return (
+          <line
+            key={`collar-div-${i}`}
+            x1={x1}
+            y1={y1}
+            x2={x2}
+            y2={y2}
+            stroke="#2563eb"
+            strokeWidth="1.5"
+            opacity="0.8"
+          />
+        );
+      })}
+
+      {/* Central Green Octagon Nexus */}
+      <polygon
+        points={greenOctPts.join(' ')}
+        fill="#043d1a"
+        stroke="#2563eb"
+        strokeWidth="3"
+        style={{ filter: 'drop-shadow(0 0 12px rgba(34,197,94,0.3))' }}
+      />
+      <circle cx="360" cy="360" r="16" fill="#022c13" stroke="#22c55e" strokeWidth="1.5" />
+      <text
+        x="360"
+        y="365.5"
+        textAnchor="middle"
+        fontSize="16"
+        fill="#facc15"
+        fontWeight="bold"
+        style={{ filter: 'drop-shadow(0 0 6px rgba(250,204,21,0.8))' }}
+      >
+        ★
+      </text>
+
+      {/* Track Tokens Rendering */}
+      {track.map((pt, absIdx) => {
+        const tokensHere = trackMap.get(absIdx) || [];
+        if (!tokensHere.length) return null;
+
+        return (
+          <g key={`oct-track-tokens-${absIdx}`}>
+            {tokensHere.map(({ playerId, tokenIndex }, ti) => {
+              const spread = tokensHere.length > 1;
+              const offsetX = spread ? ((ti % 2) * 12 - 6) : 0;
+              const offsetY = spread ? (Math.floor(ti / 2) * 12 - 6) : 0;
+              return (
+                <TokenCircle
+                  key={`${playerId}-${tokenIndex}`}
+                  pid={playerId}
+                  ti={tokenIndex}
+                  cx={pt.x + offsetX}
+                  cy={pt.y + offsetY}
+                  r={spread ? 8 : 11}
+                  isMovable={isMovable}
+                  onTokenClick={onTokenClick}
+                />
+              );
+            })}
+          </g>
+        );
+      })}
+
+      {/* Home Lane Tokens Rendering */}
+      {homeLanes.map((lane, pIdx) => {
+        const pObj = players[pIdx];
+        if (!pObj) return null;
+        const pid = pObj.id;
+
+        return lane.map((pt, laneIdx) => {
+          const tokensHere = (homeLaneMap[pid] || [])[laneIdx] || [];
+          if (!tokensHere.length) return null;
+
+          return (
+            <g key={`oct-home-tokens-${pid}-${laneIdx}`}>
+              {tokensHere.map(({ playerId, tokenIndex }) => (
+                <TokenCircle
+                  key={`${playerId}-${tokenIndex}`}
+                  pid={playerId}
+                  ti={tokenIndex}
+                  cx={pt.x}
+                  cy={pt.y}
+                  r={11}
+                  isMovable={isMovable}
+                  onTokenClick={onTokenClick}
+                />
+              ))}
+            </g>
+          );
+        });
+      })}
+
+      {/* Finished Badges */}
+      {players.map((p, pIdx) => {
+        const finishedCount = p.tokens.filter(t => t.progress === maxProg).length;
+        if (!finishedCount) return null;
+        const ang = angles[pIdx];
+        const fx = 360 + 338 * Math.cos(ang);
+        const fy = 360 + 338 * Math.sin(ang);
+        const def = PLAYER_DEFS[p.id];
+        return (
+          <g key={`oct-fin-${p.id}`}>
+            <circle cx={fx} cy={fy} r={14} fill="rgba(0,0,0,0.85)" stroke={def.colorHex} strokeWidth="1.8" />
+            <text x={fx} y={fy + 4.5} textAnchor="middle" fontSize="12" fontWeight="900" fill={def.colorHex}>
+              {finishedCount}
+            </text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+// ============================================================
 // MAIN GAME CONTROLLER
 // ============================================================
 
@@ -1639,7 +2078,14 @@ export default function NeonLudoGame() {
           </div>
 
           <div className="nludo-board-wrap">
-            {isMulti ? (
+            {activePlayerCount === 8 ? (
+              <Board8PlayerOctagon
+                players={players}
+                currentPlayerId={currentPlayer?.id}
+                movableTokens={phase === 'move' && !currentPlayer?.isBot ? movableTokens : []}
+                onTokenClick={handleTokenClick}
+              />
+            ) : isMulti ? (
               <BoardMultiPlayer
                 players={players}
                 currentPlayerId={currentPlayer?.id}
