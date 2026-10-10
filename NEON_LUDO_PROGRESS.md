@@ -1,79 +1,49 @@
 # GamiArc Neon Ludo — Progress & Implementation Documentation
 
 ## Overview
-Neon Ludo is a complete, fully functional, mobile-first and responsive Classic, Multi-Player (2–7 Players), and **8-Player Rectangular** Ludo implementation built within the GamiArc cyberpunk/neon aesthetic design system. It supports **Play vs Bots**, **same-device multiplayer (Pass & Play)**, **mixed human/bot matches**, **Quick Play**, **Classic 2–4 Player 15x15 board**, **5, 6, 7-Player polygonal corridor boards**, and a dedicated **8-Player Rectangular board** with 3 bases on long sides and 2 bases on short sides. The game features unrigged heuristic AI across 4 difficulty tiers, slow-motion capture feedback with color highlighting, Web Audio synthesized sound effects, keyboard shortcuts, a concise How to Play guide, and clean mobile UI with zero duplicate data.
+Neon Ludo is a complete, fully functional, mobile-first and responsive Classic and Multi-Player Ludo implementation built within the GamiArc cyberpunk/neon aesthetic design system. The game has been streamlined into two harmonized, authentic board modes:
+1. **Classic 4-Player Board (`Board4Player`)**: 15x15 grid layout for 2, 3, and 4 players.
+2. **Unified 8-Player Star Board (`Board8PlayerOctagon`)**: Octagonal star layout for 5, 6, 7, and 8 players.
+
+The old experimental 5–7 player polygonal corridor boards have been removed in favor of this single, polished 8-player octagonal star board that shares the identical sleek neon visual styling, colors, translucent base pods, and cell aesthetics of the 4-player board.
 
 ---
 
 ## Features & Implementation Details
 
-### 1. 8-Player Rectangular Ludo Board (Phase 6)
-- **Rectangular Layout (1000 × 680 ViewBox)**:
-  - Spec-compliant geometry: 3 player starting yards on each long-side section (Top: NW Red, N Orange, NE Yellow; Bottom: SW Cyan, S Blue, SE Purple) and 1 on each short-side section (West: Rose, East: Green), totaling 8 distinct bases.
-  - Preserves rectangular proportions (`aspect-ratio: 1000 / 680`, `max-width: min(100%, 840px)`) across desktop, tablet, and mobile with SVG responsiveness and sharp vector scaling.
-- **8 Distinct Cyberpunk Colors**:
-  1. **Red** (`#ef4444`) – Top-Left Long side
-  2. **Orange** (`#f97316`) – Top-Center Long side
-  3. **Yellow** (`#eab308`) – Top-Right Long side
-  4. **Green** (`#22c55e`) – East Short side
-  5. **Cyan** (`#06b6d4`) – Bottom-Left Long side
-  6. **Blue** (`#3b82f6`) – Bottom-Center Long side
-  7. **Purple** (`#a855f7`) – Bottom-Right Long side
-  8. **Rose** (`#ec4899`) – West Short side
-- **104-Cell Extended Track**:
-  - Exactly twice the 52-cell 4-player track ($8 \times 13 = 104$ cells).
-  - 13 cells per sector (5 inward run, 1 inner corner transition, 5 outward run, 2 outer bridge cells).
-  - Clockwise continuous loop with zero gaps, overlaps, or unreachable cells.
-- **Safe Cells & Base Exits**:
-  - 16 safe cells: Each player has a base exit safe cell at $(i \times 13)$ and an outward star safe cell at $(i \times 13 + 8)$.
-  - Tokens roll a 6 to enter the track directly onto their color's aligned safe cell.
-- **5-Cell Home Lanes & Victory Nexus**:
-  - Each player has a dedicated 5-cell colored home stretch entering inward to the central finish hub (`#111827` multi-triangle nexus).
-  - Exact finishing roll required to bear off tokens into the victory hub.
-- **Lobby Integration**:
-  - Added dedicated `'8P Rect'` option to the match setup lobby.
-  - All 8 player slots support Human / Bot toggles with Quick Presets (`vs_bots`, `pass_play`, `all_bots`).
+### 1. Unified 8-Player Octagonal Star Board (5, 6, 7 & 8 Players)
+- **Harmonized Neon Visuals (Matches 4-Player Board)**:
+  - Deep dark cyberpunk background (`#0b0f19`) across both board modes.
+  - **Track Cells**: Translucent neon squares (`fill="rgba(255,255,255,0.03)"`, `stroke="rgba(255,255,255,0.08)"`, `rx="4"`) matching the 4-player board.
+  - **Start Cells**: Glowing tinted cell with player's color (`fill={def.homeColor}`, `stroke={def.glowColor}`).
+  - **Safe Cells**: Star cells marked with glowing stars (`★`) at base exits ($i \times 12$), outward corridors ($i \times 12 + 8$), and outer bridges ($i \times 12 + 11$).
+  - **Home Lanes**: 5-cell colored home tracks entering inward toward the center with stars (`★`) and entrance arrows (`▼`).
+  - **Base Zones**: Translucent neon pods matching 4-player corner bases (`fill={def.homeColor}`, `stroke={def.glowColor}`, uppercase labels, and dotted `strokeDasharray="3 3"` nests).
+  - **Center Nexus**: 8 triangular segments in player neon tints meeting in the center with a glowing center star (`★`).
+- **Flexible Player Scalability**:
+  - **5 Players**: Green, Orange, Red, Purple, Cyan.
+  - **6 Players**: Green, Orange, Red, Purple, Cyan, Black (Dark Slate).
+  - **7 Players**: Green, Orange, Red, Purple, Cyan, Black, Pink.
+  - **8 Players**: All 8 arms active (including Gold/Yellow).
+  - Inactive arms (when playing 5–7 players) have empty bases with subtle dim borders, keeping the board natural and uncrowded.
+- **96-Cell Continuous Circuit**:
+  - 12 cells per arm sector ($8 \times 12 = 96$ cells).
+  - Home stretch starts at progress 96, exact roll required to bear off at progress 101.
+  - Generous touch targets ($r=22$ invisible hit padding) for effortless mobile tapping.
 
-### 2. Dedicated 5, 6, and 7-Player Polygonal Boards
-- **Corridor Geometry**: Spaced $N$-arm layout with square/rectangular bordered cells rotated along each arm angle, $N$ square base pods with 4 token nests each, $N$ colored home corridors, and central $N$-segment nexus.
-- **Zero Cell Overlap**: Optimized radial step spacing ($R \in [100, 130, 160, 190, 220]$) and $26\text{px}$ corridor lane offsets ensuring minimum $27.8\text{px}$ separation between all adjacent track cells across 5, 6, and 7 players.
-- **Accurate Base Exits**: Rolling a 6 moves tokens directly from the player's base yard ($R=295$) to their designated starting square ($R=220$, index $i \times 12$) located right in front of their base door.
-- **Track Length**: $12 \times N$ cells ($60$ for 5P, $72$ for 6P, $84$ for 7P) with safe cells at index $i \times 12$ (Start) and $i \times 12 + 8$ (Outward Star).
+### 2. Classic 4-Player Board (2, 3 & 4 Players)
+- Authentic 15x15 cross grid with 52 track cells and 4 corner bases.
+- 2 players use opposite colors (Red & Yellow).
+- 3 players use Red, Blue, Yellow.
+- 4 players use Red, Blue, Yellow, Green.
+- Fully preserved and untouched.
 
-### 3. Slow-Paced Captures & Clear Color Identifiers
-- **Pacing**: Capture transitions feature a deliberate 1.5s–1.6s delay, allowing all players to observe the capture event and see the captured token sent back to its base.
-- **Visual Capture Banner**: Overlays an animated neon modal explicitly identifying the colors involved:
-  `💥 RED captured BLUE's token!`
-  `Sent back to base • Bonus Roll Awarded 🎯`
-- **Live Event Log & Status Updates**: Color-coded match log entries clearly document each capture action.
-
-### 4. Audio & Accessibility
-- **Web Audio Sound Effects**: Zero external audio dependencies. Lightweight Web Audio API synthesized tones for dice rolling, token movements, captures, bonus chimes, and victory fanfares.
-- **Audio Mute/Unmute Toggle**: Interactive button (`🔊 Sound On` / `🔇 Sound Muted`) in the control bar.
-- **Keyboard Controls**:
-  - `Space` / `Enter`: Roll dice
-  - `1` / `2` / `3` / `4`: Select legal token to move
-  - `M`: Toggle sound
-  - `H`: Open How to Play guide
-  - `R`: Restart game
-- **Legal Move Highlights**: Pulsing glow and badge indicator on all tokens eligible to move for the current roll.
-
-### 5. How to Play Guide & In-Game Help
-- Concise modal guide covering:
-  - Rolling a **6** to exit the base.
-  - Movement rules, extra turns on **6**, **Captures**, and **Goal Reach**.
-  - Safe star cells where tokens cannot be captured.
-  - Quick Play (2 tokens) vs Classic (4 tokens).
-  - 4-player, polygonal 5–7 player, and rectangular 8-player board nuances.
-
-### 6. Eliminated Mobile UI Duplication
-- **Single Turn Header**: On mobile viewports ($\le 960\text{px}$), duplicate turn cards in the sidebar are hidden via CSS media queries, keeping all active turn info cleanly at the top header with the interactive dice card below the board.
-
-### 7. Unrigged Progressive AI Strategy Engine
-- **Easy**: Casual, legal random moves.
-- **Normal**: Standard AI focusing on base exits on 6 and straightforward advances.
-- **Hard**: Tactical AI prioritizing captures, star safe cells, and home stretch entry.
-- **Expert (Grandmaster)**: Deep threat-distance evaluation, escaping enemy strike ranges (1–6 cells behind), maximizing capture payoff, and computing optimal paths to nexus victory.
+### 3. Gameplay Mechanics & Engine Features
+- **Pacing & Slow-Mo Captures**: 1.5s–1.6s delay on captures with clear color-coded animated banner (`💥 RED captured BLUE's token!`).
+- **Audio & Accessibility**: Synthesized Web Audio API sound effects with mute toggle. Full keyboard shortcut support (`Space`, `1-4`, `M`, `H`, `R`).
+- **Progressive Unrigged AI**: 4 difficulty tiers (Easy, Normal, Hard, Expert).
+- **Match Modes**: Quick Play (2 tokens per player) and Classic Mode (4 tokens per player).
+- **Mobile-First Layout**: Zero UI duplication on mobile screens, single turn header, touch-friendly token controls with glowing movable pulse rings.
 
 ---
 
@@ -81,20 +51,15 @@ Neon Ludo is a complete, fully functional, mobile-first and responsive Classic, 
 
 | File | Changes Made |
 | --- | --- |
-| `components/games/NeonLudoGame.jsx` | Added 8th color (`rose`), 8-player engine rules (`getHomeStretchStart` 104, `getMaxProgress` 109, `getTotalTrackCells` 104, `getSafeCellsSet` 16 cells, `getAbsoluteTrackPos` modulo 104), lobby `'8P Rect'` option and presets, `build8BoardGeometry` (1000×680 rectangular layout, 8 bases, 104 cells, 8 home lanes), and `Board8PlayerRectangular` component. |
-| `app/games/Gamiarc_ludo/ludo.css` | Added `.nludo-board-wrap.is-rect` styling for responsive rectangular aspect ratio ($1000 / 680 \approx 1.47$) on desktop, tablet, and mobile; capture banner overlay styling, hidden duplicate turn card on mobile viewports ($\le 960\text{px}$), modal styling for How to Play guide. |
-| `lib/games.js` | Status set to `'published'` (removed "Under Development" badge). |
-| `components/games/GameCard.jsx` | Updated play link to direct to the live game page. |
-| `NEON_LUDO_PROGRESS.md` | Progress and architecture documentation updated with Phase 6 details. |
+| `components/games/NeonLudoGame.jsx` | Removed `buildMultiBoardGeometry` and `BoardMultiPlayer`; unified 5, 6, 7, and 8 player modes to use `Board8PlayerOctagon`; restyled `Board8PlayerOctagon` to match the exact dark neon cyberpunk aesthetic and colors of `Board4Player`; updated engine rules (96-cell track for $\ge 5$ players); updated lobby roster and subtitles. |
+| `app/games/Gamiarc_ludo/ludo.css` | Ensured 1:1 square aspect ratio for both boards on mobile, tablet, and desktop (`aspect-ratio: 1 / 1`); removed `.is-rect` override. |
+| `NEON_LUDO_PROGRESS.md` | Updated progress and architecture documentation. |
 
 ---
 
 ## Verification & Status
-- [x] **8-Player Rectangular Board**: 3 player starting yards on each long side, 2 on short sides, totaling 8 players.
-- [x] **8 Distinct Colors**: Red, Orange, Yellow, Green, Cyan, Blue, Purple, Rose with matching tokens, bases, and home tracks.
-- [x] **104-Cell Extended Track**: Exactly $2\times$ 4-player track length ($8 \times 13 = 104$), connected clockwise without gaps, overlaps, or collisions.
-- [x] **16 Safe Cells**: Base exit ($i \times 13$) and star cell ($i \times 13 + 8$) for all 8 players.
-- [x] **Full 8-Player Match Simulation**: Automated headless simulation completed full 8-player match with winner in 606 turns with 0 errors.
-- [x] **Responsive Aspect Ratio**: `.nludo-board-wrap.is-rect` preserves 1000:680 proportions on mobile, tablet, and desktop without distortion.
-- [x] **4-Player and 5–7 Player Modes Preserved**: Untouched existing board modes and gameplay mechanics.
-- [x] **Production Build**: Passes cleanly with code 0 (`npm run build`).
+- [x] **Consolidated Architecture**: Only 2 board modes exist (`Board4Player` for 2–4 players, `Board8PlayerOctagon` for 5–8 players).
+- [x] **Visual Consistency**: Both boards share identical `#0b0f19` canvas, translucent neon base pods, cell borders, glowing safe stars, home lanes, and center nexus.
+- [x] **Clean Removal**: Old polygonal corridor board (`BoardMultiPlayer` and `buildMultiBoardGeometry`) completely removed.
+- [x] **Mobile Touch Ergonomics**: 1:1 aspect ratio fills phone screens completely; oversized invisible hit targets ($r=22$) for responsive tapping.
+- [x] **Production Build**: Clean compilation with exit code 0 (`next build`).

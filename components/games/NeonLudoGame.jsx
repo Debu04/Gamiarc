@@ -242,73 +242,6 @@ const BASE_POSITIONS_4 = {
   green:  [[1.5, 10.5], [3.5, 10.5], [1.5, 12.5], [3.5, 12.5]],
 };
 
-// ============================================================
-// 5, 6, 7-PLAYER LUDO KING STYLE BOARD GEOMETRY (Polygonal Corridors)
-// ============================================================
-
-function buildMultiBoardGeometry(numPlayers) {
-  const angles = [];
-  for (let i = 0; i < numPlayers; i++) {
-    angles.push(-Math.PI / 2 + i * (2 * Math.PI / numPlayers));
-  }
-  const track = [];
-  const homeLanes = [];
-  const bases = [];
-  const X0 = 360, Y0 = 360;
-  const d = 26; // corridor offset
-  const radii = [100, 130, 160, 190, 220]; // 5 cell radii
-
-  for (let i = 0; i < numPlayers; i++) {
-    const ang = angles[i];
-    const uX = Math.cos(ang), uY = Math.sin(ang);
-    const vX = -Math.sin(ang), vY = Math.cos(ang);
-
-    // 1. Inward corridor (5 cells from outer to inner)
-    // Step 0 is at radius 220 (start cell right outside base i)
-    for (let k = 4; k >= 0; k--) {
-      const r = radii[k];
-      track.push({ x: X0 + r * uX - d * vX, y: Y0 + r * uY - d * vY, ang, arm: i, step: 4 - k });
-    }
-
-    // 2. Inner bridge cell between arm i and arm (i + 1) % numPlayers
-    const nextI = (i + 1) % numPlayers;
-    const midAng = ang + Math.PI / numPlayers;
-    track.push({ x: X0 + 82 * Math.cos(midAng), y: Y0 + 82 * Math.sin(midAng), ang: midAng, arm: i, step: 5 });
-
-    // 3. Outward corridor of arm i+1 (5 cells from inner to outer)
-    const nextAng = angles[nextI];
-    const nUx = Math.cos(nextAng), nUy = Math.sin(nextAng);
-    const nVx = -Math.sin(nextAng), nVy = Math.cos(nextAng);
-    for (let k = 0; k < 5; k++) {
-      const r = radii[k];
-      track.push({ x: X0 + r * nUx + d * nVx, y: Y0 + r * nUy + d * nVy, ang: nextAng, arm: nextI, step: 6 + k });
-    }
-
-    // 4. Outer bridge cell at arm i+1
-    track.push({ x: X0 + 248 * nUx, y: Y0 + 248 * nUy, ang: nextAng, arm: nextI, step: 11 });
-
-    // Home lane for arm i (5 cells from outer to inner)
-    const lane = [];
-    for (let k = 4; k >= 0; k--) {
-      const r = radii[k];
-      lane.push({ x: X0 + r * uX, y: Y0 + r * uY, ang });
-    }
-    homeLanes.push(lane);
-
-    // Base for arm i
-    const bCX = X0 + 295 * uX;
-    const bCY = Y0 + 295 * uY;
-    bases.push([
-      { x: bCX - 16 * uX - 16 * vX, y: bCY - 16 * uY - 16 * vY },
-      { x: bCX - 16 * uX + 16 * vX, y: bCY - 16 * uY + 16 * vY },
-      { x: bCX + 16 * uX - 16 * vX, y: bCY + 16 * uY - 16 * vY },
-      { x: bCX + 16 * uX + 16 * vX, y: bCY + 16 * uY + 16 * vY },
-    ]);
-  }
-
-  return { angles, track, homeLanes, bases };
-}
-
 const DIFFICULTIES = [
   { id: 'easy',   label: 'Easy',   desc: 'Casual moves' },
   { id: 'normal', label: 'Normal', desc: 'Balanced AI' },
@@ -457,7 +390,7 @@ function Lobby({ onStart }) {
             NEON LUDO
           </div>
           <h2 className="nludo-lobby-title">Match Setup</h2>
-          <p className="nludo-lobby-subtitle">Classic 2–4 players, 5–7 polygonal, or 8-Player Octagonal Star board.</p>
+          <p className="nludo-lobby-subtitle">2–4 players (Classic Board) or 5–8 players (8-Player Star Board).</p>
         </div>
 
         {/* Presets */}
@@ -1006,290 +939,11 @@ function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick, p
 }
 
 // ============================================================
-// 5, 6, 7-PLAYER LUDO KING STYLE BOARD SVG (Polygonal Corridors)
+// 8-PLAYER OCTAGONAL STAR BOARD (Used for 5, 6, 7 & 8 Players)
+// Cyberpunk / Neon Design System Harmonized with 4-Player Board
 // ============================================================
 
-function BoardMultiPlayer({ players, currentPlayerId, movableTokens, onTokenClick, playerCount }) {
-  const geo = useMemo(() => buildMultiBoardGeometry(playerCount), [playerCount]);
-  const { angles, track, homeLanes, bases } = geo;
-
-  const homeStart = getHomeStretchStart(playerCount);
-  const maxProg = getMaxProgress(playerCount);
-  const safeSet = useMemo(() => getSafeCellsSet(playerCount), [playerCount]);
-
-  const trackMap = new Map();
-  const homeLaneMap = {};
-  const baseMap = {};
-
-  players.forEach((p, pIdx) => {
-    homeLaneMap[p.id] = Array.from({ length: 5 }, () => []);
-    baseMap[p.id] = [];
-    p.tokens.forEach((t, ti) => {
-      if (t.progress === maxProg) return;
-      if (t.progress === -1) {
-        baseMap[p.id].push({ playerId: p.id, tokenIndex: ti, token: t });
-        return;
-      }
-      if (t.progress >= homeStart) {
-        const laneIdx = t.progress - homeStart;
-        if (laneIdx < 5) homeLaneMap[p.id][laneIdx].push({ playerId: p.id, tokenIndex: ti, token: t });
-        return;
-      }
-      const absPos = getAbsoluteTrackPos(p.id, t.progress, playerCount, pIdx);
-      if (!trackMap.has(absPos)) trackMap.set(absPos, []);
-      trackMap.get(absPos).push({ playerId: p.id, tokenIndex: ti, token: t });
-    });
-  });
-
-  const isMovable = (pid, ti) => pid === currentPlayerId && movableTokens.includes(ti);
-
-  return (
-    <svg viewBox="0 0 720 720" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" className="nludo-board-svg">
-      <rect width="720" height="720" fill="#0b0f19" rx="16" />
-
-      {/* Base Cards for all arms */}
-      {angles.map((ang, i) => {
-        const uX = Math.cos(ang), uY = Math.sin(ang);
-        const playerObj = players[i];
-        if (!playerObj) return null;
-        const pid = playerObj.id;
-        const def = PLAYER_DEFS[pid] || PLAYER_DEFS.red;
-        const bCX = 360 + 295 * uX;
-        const bCY = 360 + 295 * uY;
-        const deg = (ang * 180 / Math.PI) + 90;
-
-        return (
-          <g key={`base-panel-${i}`} transform={`translate(${bCX}, ${bCY}) rotate(${deg})`}>
-            <rect
-              x="-38"
-              y="-38"
-              width="76"
-              height="76"
-              rx="14"
-              fill={def.homeColor}
-              stroke={def.glowColor}
-              strokeWidth="1.5"
-            />
-            <text
-              x="0"
-              y="-24"
-              textAnchor="middle"
-              fontSize="9"
-              fontWeight="900"
-              fill={def.colorHex}
-              letterSpacing="0.1em"
-            >
-              {def.label.toUpperCase()}
-            </text>
-          </g>
-        );
-      })}
-
-      {/* Track Cells (Rotated along spoke angle) */}
-      {track.map((pt, absIdx) => {
-        const isSafe = safeSet.has(absIdx);
-        const isStart = absIdx % 12 === 0;
-        const armIdx = Math.floor(absIdx / 12);
-        const startPlayer = isStart && players[armIdx] ? players[armIdx].id : null;
-        const startDef = startPlayer ? PLAYER_DEFS[startPlayer] : null;
-
-        let cellFill = 'rgba(255,255,255,0.03)';
-        let cellStroke = 'rgba(255,255,255,0.1)';
-
-        if (startDef) {
-          cellFill = startDef.homeColor;
-          cellStroke = startDef.glowColor;
-        } else if (isSafe) {
-          cellFill = 'rgba(255,255,255,0.09)';
-          cellStroke = 'rgba(255,255,255,0.3)';
-        }
-
-        const tokensHere = trackMap.get(absIdx) || [];
-        const deg = (pt.ang * 180 / Math.PI);
-
-        return (
-          <g key={`multi-track-${absIdx}`}>
-            <g transform={`translate(${pt.x}, ${pt.y}) rotate(${deg})`}>
-              <rect
-                x="-12"
-                y="-12"
-                width="24"
-                height="24"
-                rx="4"
-                fill={cellFill}
-                stroke={cellStroke}
-                strokeWidth={isStart ? 1.5 : 1}
-              />
-              {isSafe && (
-                <text
-                  x="0"
-                  y="4"
-                  textAnchor="middle"
-                  fontSize="12"
-                  fill={startDef ? startDef.colorHex : 'rgba(255,255,255,0.5)'}
-                  fontWeight="bold"
-                >
-                  ★
-                </text>
-              )}
-            </g>
-            {tokensHere.map(({ playerId, tokenIndex }, ti) => {
-              const spread = tokensHere.length > 1;
-              const offsetX = spread ? ((ti % 2) * 12 - 6) : 0;
-              const offsetY = spread ? (Math.floor(ti / 2) * 12 - 4) : 0;
-              return (
-                <TokenCircle
-                  key={`${playerId}-${tokenIndex}`}
-                  pid={playerId}
-                  ti={tokenIndex}
-                  cx={pt.x + offsetX}
-                  cy={pt.y + offsetY}
-                  r={spread ? 7 : 10}
-                  isMovable={isMovable}
-                  onTokenClick={onTokenClick}
-                />
-              );
-            })}
-          </g>
-        );
-      })}
-
-      {/* Home Lanes (5 cells per arm) */}
-      {homeLanes.map((lane, pIdx) => {
-        const playerObj = players[pIdx];
-        if (!playerObj) return null;
-        const pid = playerObj.id;
-        const def = PLAYER_DEFS[pid] || PLAYER_DEFS.red;
-
-        return lane.map((pt, laneIdx) => {
-          const tokensHere = (homeLaneMap[pid] || [])[laneIdx] || [];
-          const deg = (pt.ang * 180 / Math.PI);
-
-          return (
-            <g key={`multi-home-${pid}-${laneIdx}`}>
-              <g transform={`translate(${pt.x}, ${pt.y}) rotate(${deg})`}>
-                <rect
-                  x="-12"
-                  y="-12"
-                  width="24"
-                  height="24"
-                  rx="4"
-                  fill={def.homeColor}
-                  stroke={def.glowColor}
-                  strokeWidth="1.5"
-                />
-                {laneIdx === 0 && (
-                  <text x="0" y="4.5" textAnchor="middle" fontSize="11" fill={def.colorHex} opacity="0.9" fontWeight="bold">
-                    ▼
-                  </text>
-                )}
-              </g>
-              {tokensHere.map(({ playerId, tokenIndex }) => (
-                <TokenCircle
-                  key={`${playerId}-${tokenIndex}`}
-                  pid={playerId}
-                  ti={tokenIndex}
-                  cx={pt.x}
-                  cy={pt.y}
-                  r={10}
-                  isMovable={isMovable}
-                  onTokenClick={onTokenClick}
-                />
-              ))}
-            </g>
-          );
-        });
-      })}
-
-      {/* Base Token Slots */}
-      {bases.map((slots, pIdx) => {
-        const playerObj = players[pIdx];
-        if (!playerObj) return null;
-        const pid = playerObj.id;
-        const tokens = baseMap[pid] || [];
-        const maxTokens = playerObj.tokens.length;
-
-        return slots.slice(0, maxTokens).map((pt, slotIdx) => {
-          const tokenEntry = tokens[slotIdx];
-          return (
-            <g key={`multi-base-${pid}-${slotIdx}`}>
-              <circle
-                cx={pt.x}
-                cy={pt.y}
-                r="11"
-                fill="rgba(10,10,10,0.5)"
-                stroke="rgba(255,255,255,0.18)"
-                strokeWidth="1"
-                strokeDasharray="2 2"
-              />
-              {tokenEntry && (
-                <TokenCircle
-                  pid={tokenEntry.playerId}
-                  ti={tokenEntry.tokenIndex}
-                  cx={pt.x}
-                  cy={pt.y}
-                  r={11}
-                  isMovable={isMovable}
-                  onTokenClick={onTokenClick}
-                />
-              )}
-            </g>
-          );
-        });
-      })}
-
-      {/* Central Nexus Polygons */}
-      {angles.map((ang, i) => {
-        const nextAng = angles[(i + 1) % playerCount];
-        const p1X = 360 + 64 * Math.cos(ang), p1Y = 360 + 64 * Math.sin(ang);
-        const p2X = 360 + 64 * Math.cos(nextAng), p2Y = 360 + 64 * Math.sin(nextAng);
-        const playerObj = players[i];
-        const pid = playerObj ? playerObj.id : 'red';
-        const def = PLAYER_DEFS[pid] || PLAYER_DEFS.red;
-
-        return (
-          <polygon
-            key={`multi-center-${i}`}
-            points={`360,360 ${p1X},${p1Y} ${p2X},${p2Y}`}
-            fill={def.homeColor}
-            stroke={def.glowColor}
-            strokeWidth="1.2"
-          />
-        );
-      })}
-      <circle cx="360" cy="360" r="20" fill="rgba(11,15,25,0.95)" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
-      <text x="360" y="366" textAnchor="middle" fontSize="18" fill="#ffffff" style={{ filter: 'drop-shadow(0 0 8px #fff)' }}>
-        ★
-      </text>
-
-      {/* Finished Badges */}
-      {players.map((p, pIdx) => {
-        const finishedCount = p.tokens.filter(t => t.progress === maxProg).length;
-        if (!finishedCount) return null;
-        const ang = angles[pIdx];
-        const fx = 360 + 338 * Math.cos(ang);
-        const fy = 360 + 338 * Math.sin(ang);
-        const def = PLAYER_DEFS[p.id];
-        return (
-          <g key={`multi-fin-${p.id}`}>
-            <circle cx={fx} cy={fy} r={14} fill="rgba(0,0,0,0.8)" stroke={def.colorHex} strokeWidth="1.5" />
-            <text x={fx} y={fy + 4.5} textAnchor="middle" fontSize="12" fontWeight="900" fill={def.colorHex}>
-              {finishedCount}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
-// ============================================================
-// 8-PLAYER RECTANGULAR BOARD GEOMETRY & COMPONENT
-// ============================================================
-
-// ============================================================
-// 8-PLAYER OCTAGONAL STAR BOARD GEOMETRY & COMPONENT (Authentic Ludo)
-// ============================================================
+const BASE_ARM_IDS_8 = ['green', 'orange', 'red', 'purple', 'cyan', 'dark', 'rose', 'yellow'];
 
 function build8BoardGeometry() {
   const angles = [];
@@ -1299,7 +953,6 @@ function build8BoardGeometry() {
   const track = [];
   const homeLanes = [];
   const bases = [];
-  const arms = [];
   const X0 = 360, Y0 = 360;
 
   // 6 rows from r=112 to r=292
@@ -1310,12 +963,6 @@ function build8BoardGeometry() {
     const ang = angles[i];
     const uX = Math.cos(ang), uY = Math.sin(ang);
     const vX = -Math.sin(ang), vY = Math.cos(ang);
-
-    arms.push({
-      ang,
-      uX, uY, vX, vY,
-      armIndex: i,
-    });
 
     // 12 track cells for sector i:
     // Step 0: Row 5 of Right column (Start cell right outside base i)
@@ -1357,7 +1004,7 @@ function build8BoardGeometry() {
       });
     }
 
-    // Step 11: Outer bridge at Arm (i+1)'s Row 5 Middle column (marked with X)
+    // Step 11: Outer bridge at Arm (i+1)'s Row 5 Middle column (marked with safe star)
     track.push({
       x: X0 + rowRadii[5] * nUx,
       y: Y0 + rowRadii[5] * nUy,
@@ -1366,8 +1013,7 @@ function build8BoardGeometry() {
       step: 11,
     });
 
-    // Home lane for player i: 5 cells inward along Middle column
-    // Rows 4 down to 0
+    // Home lane for arm i: 5 cells inward along Middle column (Rows 4 down to 0)
     const lane = [];
     for (let r = 4; r >= 0; r--) {
       const rad = rowRadii[r];
@@ -1380,24 +1026,27 @@ function build8BoardGeometry() {
     }
     homeLanes.push(lane);
 
-    // Base for player i: in the wedge between Arm i and Arm (i+1)
+    // Base pod for arm i: positioned in wedge between Arm i and Arm (i+1)
     const wAng = ang + Math.PI / 8;
     const wUx = Math.cos(wAng), wUy = Math.sin(wAng);
     const wVx = -Math.sin(wAng), wVy = Math.cos(wAng);
+    const bCX = X0 + 245 * wUx;
+    const bCY = Y0 + 245 * wUy;
+
     bases.push([
-      { x: X0 + 268 * wUx - 20 * wVx, y: Y0 + 268 * wUy - 20 * wVy },
-      { x: X0 + 268 * wUx + 20 * wVx, y: Y0 + 268 * wUy + 20 * wVy },
-      { x: X0 + 218 * wUx,            y: Y0 + 218 * wUy },
-      { x: X0 + 172 * wUx,            y: Y0 + 172 * wUy },
+      { x: bCX - 15 * wUx - 15 * wVx, y: bCY - 15 * wUy - 15 * wVy },
+      { x: bCX - 15 * wUx + 15 * wVx, y: bCY - 15 * wUy + 15 * wVy },
+      { x: bCX + 15 * wUx - 15 * wVx, y: bCY + 15 * wUy - 15 * wVy },
+      { x: bCX + 15 * wUx + 15 * wVx, y: bCY + 15 * wUy + 15 * wVy },
     ]);
   }
 
-  return { angles, track, homeLanes, bases, arms, rowRadii, colOffset };
+  return { angles, track, homeLanes, bases, rowRadii, colOffset };
 }
 
 function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenClick }) {
   const geo = useMemo(() => build8BoardGeometry(), []);
-  const { angles, track, homeLanes, bases, arms, rowRadii } = geo;
+  const { angles, track, homeLanes, bases } = geo;
 
   const homeStart = 96;
   const maxProg = 101;
@@ -1436,78 +1085,85 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
     outerRimPts.push(`${360 + 352 * Math.cos(a)},${360 + 352 * Math.sin(a)}`);
   }
 
-  // Central green octagon points (radius 56)
-  const greenOctPts = [];
-  for (let k = 0; k < 8; k++) {
-    const a = -Math.PI / 2 + k * (2 * Math.PI / 8) - Math.PI / 8;
-    greenOctPts.push(`${360 + 56 * Math.cos(a)},${360 + 56 * Math.sin(a)}`);
-  }
-
-  // Collar octagon points (radius 92)
-  const collarOctPts = [];
-  for (let k = 0; k < 8; k++) {
-    const a = -Math.PI / 2 + k * (2 * Math.PI / 8) - Math.PI / 8;
-    collarOctPts.push(`${360 + 92 * Math.cos(a)},${360 + 92 * Math.sin(a)}`);
-  }
-
   return (
     <svg viewBox="0 0 720 720" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" className="nludo-board-svg">
-      {/* Dark Board Field */}
-      <rect width="720" height="720" fill="#040711" rx="16" />
+      {/* Dark Cyberpunk Field Background (Matches Board4Player) */}
+      <rect width="720" height="720" fill="#0b0f19" rx="16" />
 
-      {/* 16-gon Outer Perimeter with Bold Blue Neon Rim */}
+      {/* 16-gon Outer Perimeter */}
       <polygon
         points={outerRimPts.join(' ')}
-        fill="#000000"
-        stroke="#2563eb"
-        strokeWidth="4"
-        style={{ filter: 'drop-shadow(0 0 10px rgba(37,99,235,0.4))' }}
+        fill="rgba(8,12,22,0.85)"
+        stroke="rgba(255,255,255,0.08)"
+        strokeWidth="1.5"
       />
 
-      {/* 8 Base Wedges (Black grounds between arms with token clusters) */}
+      {/* 8 Base Zones (Translucent neon pods matching Board4Player) */}
       {bases.map((slots, pIdx) => {
-        const pObj = players[pIdx];
-        if (!pObj) return null;
-        const pid = pObj.id;
-        const def = PLAYER_DEFS[pid] || PLAYER_DEFS.red;
-        const tokens = baseMap[pid] || [];
-        const maxTokens = pObj.tokens.length;
+        const armPid = BASE_ARM_IDS_8[pIdx];
+        const pObj = players.find(p => p.id === armPid);
+        const def = PLAYER_DEFS[armPid] || PLAYER_DEFS.green;
+        const isActive = !!pObj;
+        const tokens = pObj ? (baseMap[armPid] || []) : [];
+        const maxTokens = pObj ? pObj.tokens.length : 4;
 
-        // Label in wedge
-        const ang = angles[pIdx] + Math.PI / 8;
-        const lx = 360 + 318 * Math.cos(ang);
-        const ly = 360 + 318 * Math.sin(ang);
+        const wAng = angles[pIdx] + Math.PI / 8;
+        const wUx = Math.cos(wAng), wUy = Math.sin(wAng);
+        const bCX = 360 + 245 * wUx, bCY = 360 + 245 * wUy;
+        const deg = (wAng * 180 / Math.PI) + 90;
 
         return (
-          <g key={`oct-base-wedge-${pid}`}>
-            {/* Player Label in Base Wedge */}
-            <text
-              x={lx}
-              y={ly}
-              textAnchor="middle"
-              fontSize="9"
-              fontWeight="900"
-              letterSpacing="0.1em"
-              fill={def.colorHex}
-              style={{ textTransform: 'uppercase', filter: `drop-shadow(0 0 4px ${def.glowColor})` }}
-            >
-              {def.label}
-            </text>
+          <g key={`oct-base-wedge-${armPid}`}>
+            {/* Outer Base Container Pod */}
+            <g transform={`translate(${bCX}, ${bCY}) rotate(${deg})`}>
+              <rect
+                x="-44"
+                y="-44"
+                width="88"
+                height="88"
+                rx="14"
+                fill={isActive ? def.homeColor : 'rgba(255,255,255,0.02)'}
+                stroke={isActive ? def.glowColor : 'rgba(255,255,255,0.06)'}
+                strokeWidth={isActive ? 1.5 : 1}
+              />
+              <rect
+                x="-36"
+                y="-36"
+                width="72"
+                height="72"
+                rx="10"
+                fill="rgba(0,0,0,0.35)"
+                stroke={isActive ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)'}
+                strokeWidth="1"
+              />
+              <text
+                x="0"
+                y="-23"
+                textAnchor="middle"
+                fontSize="9"
+                fontWeight="900"
+                letterSpacing="0.12em"
+                fill={isActive ? def.colorHex : 'rgba(255,255,255,0.2)'}
+                opacity={isActive ? 0.95 : 0.4}
+                style={{ textTransform: 'uppercase' }}
+              >
+                {def.label.toUpperCase()}
+              </text>
+            </g>
 
-            {/* Base Token Slots */}
+            {/* Base Token Nests */}
             {slots.slice(0, maxTokens).map((pt, slotIdx) => {
               const tokenEntry = tokens[slotIdx];
               return (
-                <g key={`oct-base-${pid}-${slotIdx}`}>
+                <g key={`oct-base-${armPid}-${slotIdx}`}>
                   <circle
                     cx={pt.x}
                     cy={pt.y}
-                    r="13.5"
-                    fill="rgba(10,14,24,0.6)"
-                    stroke={def.colorHex}
-                    strokeWidth="1.2"
-                    strokeDasharray="2 2"
-                    opacity="0.85"
+                    r="12.5"
+                    fill="rgba(10,10,10,0.5)"
+                    stroke={isActive ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.04)'}
+                    strokeWidth="1"
+                    strokeDasharray="3 3"
                   />
                   {tokenEntry && (
                     <TokenCircle
@@ -1515,7 +1171,7 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                       ti={tokenEntry.tokenIndex}
                       cx={pt.x}
                       cy={pt.y}
-                      r={13}
+                      r={12}
                       isMovable={isMovable}
                       onTokenClick={onTokenClick}
                     />
@@ -1527,123 +1183,55 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
         );
       })}
 
-      {/* 8 White Corridors (Arms) with Colored Borders, Stars, and 'X' Cells */}
-      {arms.map((arm, pIdx) => {
-        const pObj = players[pIdx];
-        const pid = pObj ? pObj.id : 'red';
-        const def = PLAYER_DEFS[pid] || PLAYER_DEFS.red;
-        const deg = (arm.ang * 180 / Math.PI) + 90;
-
-        return (
-          <g key={`oct-arm-${pIdx}`} transform={`translate(360, 360) rotate(${deg})`}>
-            {/* White Corridor Body */}
-            <rect
-              x="-34.5"
-              y="-312"
-              width="69"
-              height="218"
-              rx="3"
-              fill="#ffffff"
-              stroke={def.colorHex}
-              strokeWidth="2.5"
-              style={{ filter: `drop-shadow(0 0 6px ${def.glowColor})` }}
-            />
-
-            {/* 2 Longitudinal Divider Lines (3 columns) */}
-            <line x1="-11.5" y1="-312" x2="-11.5" y2="-94" stroke={def.colorHex} strokeWidth="1.2" opacity="0.65" />
-            <line x1="11.5" y1="-312" x2="11.5" y2="-94" stroke={def.colorHex} strokeWidth="1.2" opacity="0.65" />
-
-            {/* 5 Transverse Divider Lines (6 rows) */}
-            {[-276, -240, -204, -168, -132].map((yLine, li) => (
-              <line key={`arm-div-${li}`} x1="-34.5" y1={yLine} x2="34.5" y2={yLine} stroke={def.colorHex} strokeWidth="1.2" opacity="0.65" />
-            ))}
-
-            {/* Row 5 (Outermost) Middle Cell: Crossed 'X' Safe/Bridge Cell */}
-            <line x1="-10" y1="-310" x2="10" y2="-278" stroke={def.colorHex} strokeWidth="2.2" strokeLinecap="round" />
-            <line x1="10" y1="-310" x2="-10" y2="-278" stroke={def.colorHex} strokeWidth="2.2" strokeLinecap="round" />
-
-            {/* Row 5 (Outermost) Right Cell: Start Circle Indicator */}
-            <circle cx="23" cy="-294" r="7.5" fill={def.colorHex} opacity="0.85" />
-
-            {/* Middle Column Home Path Stars (Rows 4 down to 1) */}
-            {[-258, -222, -186, -150].map((starY, si) => (
-              <text
-                key={`home-star-${si}`}
-                x="0"
-                y={starY + 6.5}
-                textAnchor="middle"
-                fontSize="18"
-                fill={def.colorHex}
-                fontWeight="bold"
-                style={{ filter: `drop-shadow(0 0 2px ${def.colorHex})` }}
-              >
-                ★
-              </text>
-            ))}
-
-            {/* Row 0 Middle Cell: Entrance Arrow to Center */}
-            <text x="0" y="-108" textAnchor="middle" fontSize="12" fill={def.colorHex} opacity="0.8" fontWeight="bold">
-              ▼
-            </text>
-          </g>
-        );
-      })}
-
-      {/* Central Collar (Octagonal Ring between arms and green center) */}
-      <polygon
-        points={collarOctPts.join(' ')}
-        fill="#040711"
-        stroke="#2563eb"
-        strokeWidth="2"
-      />
-      {angles.map((ang, i) => {
-        const midA = ang + Math.PI / 8;
-        const x1 = 360 + 56 * Math.cos(midA);
-        const y1 = 360 + 56 * Math.sin(midA);
-        const x2 = 360 + 92 * Math.cos(midA);
-        const y2 = 360 + 92 * Math.sin(midA);
-        return (
-          <line
-            key={`collar-div-${i}`}
-            x1={x1}
-            y1={y1}
-            x2={x2}
-            y2={y2}
-            stroke="#2563eb"
-            strokeWidth="1.5"
-            opacity="0.8"
-          />
-        );
-      })}
-
-      {/* Central Green Octagon Nexus */}
-      <polygon
-        points={greenOctPts.join(' ')}
-        fill="#043d1a"
-        stroke="#2563eb"
-        strokeWidth="3"
-        style={{ filter: 'drop-shadow(0 0 12px rgba(34,197,94,0.3))' }}
-      />
-      <circle cx="360" cy="360" r="16" fill="#022c13" stroke="#22c55e" strokeWidth="1.5" />
-      <text
-        x="360"
-        y="365.5"
-        textAnchor="middle"
-        fontSize="16"
-        fill="#facc15"
-        fontWeight="bold"
-        style={{ filter: 'drop-shadow(0 0 6px rgba(250,204,21,0.8))' }}
-      >
-        ★
-      </text>
-
-      {/* Track Tokens Rendering */}
+      {/* 96 Track Cells (Harmonized with Board4Player) */}
       {track.map((pt, absIdx) => {
+        const isSafe = safeSet.has(absIdx);
+        const isStart = absIdx % 12 === 0;
+        const armIdx = Math.floor(absIdx / 12);
+        const armPid = BASE_ARM_IDS_8[armIdx];
+        const startPlayer = isStart && players.find(p => p.id === armPid) ? armPid : null;
+        const startDef = startPlayer ? PLAYER_DEFS[startPlayer] : (isStart ? PLAYER_DEFS[armPid] : null);
+
+        let cellFill = 'rgba(255,255,255,0.03)';
+        let cellStroke = 'rgba(255,255,255,0.08)';
+
+        if (startPlayer && isStart) {
+          cellFill = startDef.homeColor;
+          cellStroke = startDef.glowColor;
+        } else if (isSafe) {
+          cellFill = 'rgba(255,255,255,0.08)';
+          cellStroke = 'rgba(255,255,255,0.25)';
+        }
+
         const tokensHere = trackMap.get(absIdx) || [];
-        if (!tokensHere.length) return null;
+        const deg = (pt.ang * 180 / Math.PI);
 
         return (
-          <g key={`oct-track-tokens-${absIdx}`}>
+          <g key={`oct-track-${absIdx}`}>
+            <g transform={`translate(${pt.x}, ${pt.y}) rotate(${deg})`}>
+              <rect
+                x="-11"
+                y="-11"
+                width="22"
+                height="22"
+                rx="4"
+                fill={cellFill}
+                stroke={cellStroke}
+                strokeWidth={isStart ? 1.5 : 1}
+              />
+              {isSafe && (
+                <text
+                  x="0"
+                  y="4"
+                  textAnchor="middle"
+                  fontSize="12"
+                  fill={startPlayer ? PLAYER_DEFS[startPlayer].colorHex : 'rgba(255,255,255,0.45)'}
+                  fontWeight="bold"
+                >
+                  ★
+                </text>
+              )}
+            </g>
             {tokensHere.map(({ playerId, tokenIndex }, ti) => {
               const spread = tokensHere.length > 1;
               const offsetX = spread ? ((ti % 2) * 12 - 6) : 0;
@@ -1665,18 +1253,56 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
         );
       })}
 
-      {/* Home Lane Tokens Rendering */}
+      {/* 8 Home Lanes (Harmonized with Board4Player) */}
       {homeLanes.map((lane, pIdx) => {
-        const pObj = players[pIdx];
-        if (!pObj) return null;
-        const pid = pObj.id;
+        const armPid = BASE_ARM_IDS_8[pIdx];
+        const pObj = players.find(p => p.id === armPid);
+        const def = PLAYER_DEFS[armPid] || PLAYER_DEFS.green;
+        const isActive = !!pObj;
 
         return lane.map((pt, laneIdx) => {
-          const tokensHere = (homeLaneMap[pid] || [])[laneIdx] || [];
-          if (!tokensHere.length) return null;
+          const tokensHere = (homeLaneMap[armPid] || [])[laneIdx] || [];
+          const deg = (pt.ang * 180 / Math.PI);
 
           return (
-            <g key={`oct-home-tokens-${pid}-${laneIdx}`}>
+            <g key={`oct-home-${armPid}-${laneIdx}`}>
+              <g transform={`translate(${pt.x}, ${pt.y}) rotate(${deg})`}>
+                <rect
+                  x="-11"
+                  y="-11"
+                  width="22"
+                  height="22"
+                  rx="4"
+                  fill={isActive ? def.homeColor : 'rgba(255,255,255,0.02)'}
+                  stroke={isActive ? def.glowColor : 'rgba(255,255,255,0.06)'}
+                  strokeWidth="1.5"
+                />
+                {laneIdx < 4 ? (
+                  <text
+                    x="0"
+                    y="4"
+                    textAnchor="middle"
+                    fontSize="11"
+                    fill={isActive ? def.colorHex : 'rgba(255,255,255,0.25)'}
+                    opacity={isActive ? 0.9 : 0.4}
+                    fontWeight="bold"
+                  >
+                    ★
+                  </text>
+                ) : (
+                  <text
+                    x="0"
+                    y="4"
+                    textAnchor="middle"
+                    fontSize="12"
+                    fill={isActive ? def.colorHex : 'rgba(255,255,255,0.25)'}
+                    opacity={isActive ? 0.95 : 0.4}
+                    fontWeight="bold"
+                  >
+                    ▼
+                  </text>
+                )}
+              </g>
               {tokensHere.map(({ playerId, tokenIndex }) => (
                 <TokenCircle
                   key={`${playerId}-${tokenIndex}`}
@@ -1694,6 +1320,38 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
         });
       })}
 
+      {/* Central Nexus (8 Triangular Segments Meeting at Center Star) */}
+      {angles.map((ang, i) => {
+        const ang1 = ang - Math.PI / 8;
+        const ang2 = ang + Math.PI / 8;
+        const p1X = 360 + 82 * Math.cos(ang1), p1Y = 360 + 82 * Math.sin(ang1);
+        const p2X = 360 + 82 * Math.cos(ang2), p2Y = 360 + 82 * Math.sin(ang2);
+        const armPid = BASE_ARM_IDS_8[i];
+        const isActive = players.some(p => p.id === armPid);
+        const def = PLAYER_DEFS[armPid] || PLAYER_DEFS.green;
+
+        return (
+          <polygon
+            key={`oct-nexus-${i}`}
+            points={`360,360 ${p1X},${p1Y} ${p2X},${p2Y}`}
+            fill={isActive ? def.homeColor : 'rgba(255,255,255,0.02)'}
+            stroke={isActive ? def.glowColor : 'rgba(255,255,255,0.06)'}
+            strokeWidth="1.2"
+          />
+        );
+      })}
+      <circle cx="360" cy="360" r="18" fill="rgba(11,15,25,0.95)" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+      <text
+        x="360"
+        y="366"
+        textAnchor="middle"
+        fontSize="18"
+        fill="#ffffff"
+        style={{ filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.8))' }}
+      >
+        ★
+      </text>
+
       {/* Finished Badges */}
       {players.map((p, pIdx) => {
         const finishedCount = p.tokens.filter(t => t.progress === maxProg).length;
@@ -1704,7 +1362,7 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
         const def = PLAYER_DEFS[p.id];
         return (
           <g key={`oct-fin-${p.id}`}>
-            <circle cx={fx} cy={fy} r={14} fill="rgba(0,0,0,0.85)" stroke={def.colorHex} strokeWidth="1.8" />
+            <circle cx={fx} cy={fy} r={14} fill="rgba(0,0,0,0.85)" stroke={def.colorHex} strokeWidth="1.5" />
             <text x={fx} y={fy + 4.5} textAnchor="middle" fontSize="12" fontWeight="900" fill={def.colorHex}>
               {finishedCount}
             </text>
@@ -2078,20 +1736,12 @@ export default function NeonLudoGame() {
           </div>
 
           <div className="nludo-board-wrap">
-            {activePlayerCount === 8 ? (
+            {activePlayerCount >= 5 ? (
               <Board8PlayerOctagon
                 players={players}
                 currentPlayerId={currentPlayer?.id}
                 movableTokens={phase === 'move' && !currentPlayer?.isBot ? movableTokens : []}
                 onTokenClick={handleTokenClick}
-              />
-            ) : isMulti ? (
-              <BoardMultiPlayer
-                players={players}
-                currentPlayerId={currentPlayer?.id}
-                movableTokens={phase === 'move' && !currentPlayer?.isBot ? movableTokens : []}
-                onTokenClick={handleTokenClick}
-                playerCount={activePlayerCount}
               />
             ) : (
               <Board4Player
