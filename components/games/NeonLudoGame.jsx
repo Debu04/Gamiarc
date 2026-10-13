@@ -635,7 +635,7 @@ function VictoryScreen({ winner, players, playerCount, onPlayAgain, onNewGame })
 // DICE COMPONENT
 // ============================================================
 
-function DiceFace({ value, rolling, colorHex, glowColor }) {
+function DiceFace({ value, rolling, colorHex, glowColor, onClick, interactive, idle }) {
   const dotPositions = {
     1: [[50, 50]],
     2: [[25, 25], [75, 75]],
@@ -648,8 +648,23 @@ function DiceFace({ value, rolling, colorHex, glowColor }) {
   const strokeColor = colorHex || '#3b82f6';
   const shadowColor = glowColor || 'rgba(59,130,246,0.6)';
 
+  const classNames = [
+    'nludo-dice',
+    rolling ? 'rolling' : '',
+    interactive ? 'nludo-dice-interactive' : '',
+    idle ? 'nludo-dice-idle' : '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div className={`nludo-dice ${rolling ? 'rolling' : ''}`}>
+    <div
+      className={classNames}
+      onClick={interactive ? onClick : undefined}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={interactive ? 'Roll dice' : undefined}
+      onKeyDown={interactive ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick && onClick(); } } : undefined}
+      style={interactive ? { cursor: 'pointer', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' } : {}}
+    >
       <svg viewBox="0 0 100 100" width="100%" height="100%">
         <rect
           x="3" y="3" width="94" height="94" rx="18" ry="18"
@@ -677,10 +692,10 @@ function DiceFace({ value, rolling, colorHex, glowColor }) {
 // TOKEN COMPONENT
 // ============================================================
 
-function TokenCircle({ pid, ti, cx, cy, r = 13, isMovable, onTokenClick }) {
+function TokenCircle({ pid, ti, cx, cy, r = 15, isMovable, onTokenClick }) {
   const color = PLAYER_DEFS[pid]?.colorHex || '#fff';
   const movable = isMovable(pid, ti);
-  const hitRadius = Math.max(r + 14, 26);
+  const hitRadius = Math.max(r + 15, 29);
 
   return (
     <g
@@ -701,8 +716,8 @@ function TokenCircle({ pid, ti, cx, cy, r = 13, isMovable, onTokenClick }) {
 
       {movable && (
         <>
-          <circle cx={cx} cy={cy} r={r + 7} fill={color} opacity="0.35" className="nludo-token-pulse" />
-          <circle cx={cx} cy={cy} r={r + 3.5} fill="none" stroke="#ffffff" strokeWidth="2" strokeDasharray="4 2" className="nludo-token-ring" />
+          <circle cx={cx} cy={cy} r={r + 8} fill={color} opacity="0.38" className="nludo-token-pulse" />
+          <circle cx={cx} cy={cy} r={r + 4} fill="none" stroke="#ffffff" strokeWidth="2.2" strokeDasharray="4 2" className="nludo-token-ring" />
         </>
       )}
 
@@ -711,23 +726,23 @@ function TokenCircle({ pid, ti, cx, cy, r = 13, isMovable, onTokenClick }) {
         cy={cy}
         r={r}
         fill={color}
-        stroke={movable ? '#ffffff' : 'rgba(255,255,255,0.75)'}
-        strokeWidth={movable ? 2.5 : 1.8}
+        stroke={movable ? '#ffffff' : 'rgba(255,255,255,0.85)'}
+        strokeWidth={movable ? 2.8 : 2}
         style={{
-          filter: movable ? `drop-shadow(0 0 10px ${color})` : `drop-shadow(0 0 4px ${color})`,
+          filter: movable ? `drop-shadow(0 0 12px ${color})` : `drop-shadow(0 0 5px ${color})`,
           transform: movable ? 'scale(1.15)' : 'scale(1)',
           transformOrigin: `${cx}px ${cy}px`,
           transition: 'transform 0.15s ease, filter 0.15s ease',
         }}
       />
 
-      <circle cx={cx - r * 0.28} cy={cy - r * 0.28} r={r * 0.32} fill="rgba(255,255,255,0.45)" />
+      <circle cx={cx - r * 0.28} cy={cy - r * 0.28} r={r * 0.32} fill="rgba(255,255,255,0.5)" />
 
       <text
         x={cx}
-        y={cy + 3.5}
+        y={cy + 3.8}
         textAnchor="middle"
-        fontSize={r >= 12 ? '10' : '9'}
+        fontSize={r >= 14 ? '11' : '10'}
         fontWeight="900"
         fill="#ffffff"
         style={{ pointerEvents: 'none', userSelect: 'none' }}
@@ -776,7 +791,6 @@ function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick, p
 
   return (
     <svg viewBox={`0 0 ${VB} ${VB}`} width="100%" height="100%" preserveAspectRatio="xMidYMid meet" className="nludo-board-svg">
-      <rect width={VB} height={VB} fill="#0b0f19" rx="14" />
 
       {/* 4 Corner Base Zones */}
       <rect x={0} y={0} width={6*CELL_4} height={6*CELL_4} fill="rgba(239,68,68,0.18)" stroke="rgba(239,68,68,0.45)" strokeWidth="1.5" />
@@ -965,9 +979,9 @@ function build8BoardGeometry() {
   const bases = [];
   const X0 = 360, Y0 = 360;
 
-  // 6 rows from r=112 to r=292
-  const rowRadii = [112, 148, 184, 220, 256, 292];
-  const colOffset = 23; // left=-23, mid=0, right=+23
+  // Expanded radii from r=118 to r=328 to maximize playable board size
+  const rowRadii = [118, 160, 202, 244, 286, 328];
+  const colOffset = 27; // left=-27, mid=0, right=+27
 
   for (let i = 0; i < 8; i++) {
     const ang = angles[i];
@@ -992,8 +1006,8 @@ function build8BoardGeometry() {
     const nextI = (i + 1) % 8;
     const midAng = ang + Math.PI / 8;
     track.push({
-      x: X0 + 92 * Math.cos(midAng),
-      y: Y0 + 92 * Math.sin(midAng),
+      x: X0 + 98 * Math.cos(midAng),
+      y: Y0 + 98 * Math.sin(midAng),
       ang: midAng,
       arm: i,
       step: 5,
@@ -1040,14 +1054,14 @@ function build8BoardGeometry() {
     const wAng = ang + Math.PI / 8;
     const wUx = Math.cos(wAng), wUy = Math.sin(wAng);
     const wVx = -Math.sin(wAng), wVy = Math.cos(wAng);
-    const bCX = X0 + 245 * wUx;
-    const bCY = Y0 + 245 * wUy;
+    const bCX = X0 + 268 * wUx;
+    const bCY = Y0 + 268 * wUy;
 
     bases.push([
-      { x: bCX - 15 * wUx - 15 * wVx, y: bCY - 15 * wUy - 15 * wVy },
-      { x: bCX - 15 * wUx + 15 * wVx, y: bCY - 15 * wUy + 15 * wVy },
-      { x: bCX + 15 * wUx - 15 * wVx, y: bCY + 15 * wUy - 15 * wVy },
-      { x: bCX + 15 * wUx + 15 * wVx, y: bCY + 15 * wUy + 15 * wVy },
+      { x: bCX - 17 * wUx - 17 * wVx, y: bCY - 17 * wUy - 17 * wVy },
+      { x: bCX - 17 * wUx + 17 * wVx, y: bCY - 17 * wUy + 17 * wVy },
+      { x: bCX + 17 * wUx - 17 * wVx, y: bCY + 17 * wUy - 17 * wVy },
+      { x: bCX + 17 * wUx + 17 * wVx, y: bCY + 17 * wUy + 17 * wVy },
     ]);
   }
 
@@ -1088,23 +1102,20 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
 
   const isMovable = (pid, ti) => pid === currentPlayerId && movableTokens.includes(ti);
 
-  // 16-gon outer rim points
+  // 16-gon outer rim points scaled out to edge (radius 356 out of 360)
   const outerRimPts = [];
   for (let k = 0; k < 16; k++) {
     const a = -Math.PI / 2 + k * (2 * Math.PI / 16) - Math.PI / 16;
-    outerRimPts.push(`${360 + 352 * Math.cos(a)},${360 + 352 * Math.sin(a)}`);
+    outerRimPts.push(`${360 + 356 * Math.cos(a)},${360 + 356 * Math.sin(a)}`);
   }
 
   return (
     <svg viewBox="0 0 720 720" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" className="nludo-board-svg">
-      {/* Dark Cyberpunk Field Background (Matches Board4Player) */}
-      <rect width="720" height="720" fill="#0b0f19" rx="16" />
-
-      {/* 16-gon Outer Perimeter */}
+      {/* 16-gon Outer Perimeter (Edge-to-edge, removed box background to maximize size) */}
       <polygon
         points={outerRimPts.join(' ')}
-        fill="rgba(8,12,22,0.85)"
-        stroke="rgba(255,255,255,0.08)"
+        fill="rgba(10,14,26,0.95)"
+        stroke="rgba(255,255,255,0.12)"
         strokeWidth="1.5"
       />
 
@@ -1119,7 +1130,7 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
 
         const wAng = angles[pIdx] + Math.PI / 8;
         const wUx = Math.cos(wAng), wUy = Math.sin(wAng);
-        const bCX = 360 + 245 * wUx, bCY = 360 + 245 * wUy;
+        const bCX = 360 + 268 * wUx, bCY = 360 + 268 * wUy;
         const deg = (wAng * 180 / Math.PI) + 90;
 
         return (
@@ -1127,20 +1138,20 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
             {/* Outer Base Container Pod */}
             <g transform={`translate(${bCX}, ${bCY}) rotate(${deg})`}>
               <rect
-                x="-44"
-                y="-44"
-                width="88"
-                height="88"
+                x="-48"
+                y="-48"
+                width="96"
+                height="96"
                 rx="14"
                 fill={isActive ? def.homeColor : 'rgba(255,255,255,0.02)'}
                 stroke={isActive ? def.glowColor : 'rgba(255,255,255,0.06)'}
                 strokeWidth={isActive ? 1.5 : 1}
               />
               <rect
-                x="-36"
-                y="-36"
-                width="72"
-                height="72"
+                x="-40"
+                y="-40"
+                width="80"
+                height="80"
                 rx="10"
                 fill="rgba(0,0,0,0.35)"
                 stroke={isActive ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.03)'}
@@ -1148,9 +1159,9 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
               />
               <text
                 x="0"
-                y="-23"
+                y="-25"
                 textAnchor="middle"
-                fontSize="9"
+                fontSize="10"
                 fontWeight="900"
                 letterSpacing="0.12em"
                 fill={isActive ? def.colorHex : 'rgba(255,255,255,0.2)'}
@@ -1169,9 +1180,9 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                   <circle
                     cx={pt.x}
                     cy={pt.y}
-                    r="15"
+                    r="16.5"
                     fill="rgba(10,10,10,0.5)"
-                    stroke={isActive ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.04)'}
+                    stroke={isActive ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.04)'}
                     strokeWidth="1"
                     strokeDasharray="3 3"
                   />
@@ -1181,7 +1192,7 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                       ti={tokenEntry.tokenIndex}
                       cx={pt.x}
                       cy={pt.y}
-                      r={14.5}
+                      r={16}
                       isMovable={isMovable}
                       onTokenClick={onTokenClick}
                     />
@@ -1220,11 +1231,11 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
           <g key={`oct-track-${absIdx}`}>
             <g transform={`translate(${pt.x}, ${pt.y}) rotate(${deg})`}>
               <rect
-                x="-12"
-                y="-12"
-                width="24"
-                height="24"
-                rx="5"
+                x="-13.5"
+                y="-13.5"
+                width="27"
+                height="27"
+                rx="5.5"
                 fill={cellFill}
                 stroke={cellStroke}
                 strokeWidth={isStart ? 1.5 : 1}
@@ -1232,9 +1243,9 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
               {isSafe && (
                 <text
                   x="0"
-                  y="4"
+                  y="4.5"
                   textAnchor="middle"
-                  fontSize="12"
+                  fontSize="13"
                   fill={startPlayer ? PLAYER_DEFS[startPlayer].colorHex : 'rgba(255,255,255,0.45)'}
                   fontWeight="bold"
                 >
@@ -1244,8 +1255,8 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
             </g>
             {tokensHere.map(({ playerId, tokenIndex }, ti) => {
               const spread = tokensHere.length > 1;
-              const offsetX = spread ? ((ti % 2) * 12 - 6) : 0;
-              const offsetY = spread ? (Math.floor(ti / 2) * 12 - 6) : 0;
+              const offsetX = spread ? ((ti % 2) * 14 - 7) : 0;
+              const offsetY = spread ? (Math.floor(ti / 2) * 14 - 7) : 0;
               return (
                 <TokenCircle
                   key={`${playerId}-${tokenIndex}`}
@@ -1253,7 +1264,7 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                   ti={tokenIndex}
                   cx={pt.x + offsetX}
                   cy={pt.y + offsetY}
-                  r={spread ? 10 : 13.5}
+                  r={spread ? 12 : 16}
                   isMovable={isMovable}
                   onTokenClick={onTokenClick}
                 />
@@ -1278,11 +1289,11 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
             <g key={`oct-home-${armPid}-${laneIdx}`}>
               <g transform={`translate(${pt.x}, ${pt.y}) rotate(${deg})`}>
                 <rect
-                  x="-12"
-                  y="-12"
-                  width="24"
-                  height="24"
-                  rx="5"
+                  x="-13.5"
+                  y="-13.5"
+                  width="27"
+                  height="27"
+                  rx="5.5"
                   fill={isActive ? def.homeColor : 'rgba(255,255,255,0.02)'}
                   stroke={isActive ? def.glowColor : 'rgba(255,255,255,0.06)'}
                   strokeWidth="1.5"
@@ -1290,9 +1301,9 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                 {laneIdx < 4 ? (
                   <text
                     x="0"
-                    y="4"
+                    y="4.5"
                     textAnchor="middle"
-                    fontSize="11"
+                    fontSize="12"
                     fill={isActive ? def.colorHex : 'rgba(255,255,255,0.25)'}
                     opacity={isActive ? 0.9 : 0.4}
                     fontWeight="bold"
@@ -1302,9 +1313,9 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                 ) : (
                   <text
                     x="0"
-                    y="4"
+                    y="4.5"
                     textAnchor="middle"
-                    fontSize="12"
+                    fontSize="13"
                     fill={isActive ? def.colorHex : 'rgba(255,255,255,0.25)'}
                     opacity={isActive ? 0.95 : 0.4}
                     fontWeight="bold"
@@ -1320,7 +1331,7 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                   ti={tokenIndex}
                   cx={pt.x}
                   cy={pt.y}
-                  r={13.5}
+                  r={16}
                   isMovable={isMovable}
                   onTokenClick={onTokenClick}
                 />
@@ -1334,8 +1345,8 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
       {angles.map((ang, i) => {
         const ang1 = ang - Math.PI / 8;
         const ang2 = ang + Math.PI / 8;
-        const p1X = 360 + 82 * Math.cos(ang1), p1Y = 360 + 82 * Math.sin(ang1);
-        const p2X = 360 + 82 * Math.cos(ang2), p2Y = 360 + 82 * Math.sin(ang2);
+        const p1X = 360 + 98 * Math.cos(ang1), p1Y = 360 + 98 * Math.sin(ang1);
+        const p2X = 360 + 98 * Math.cos(ang2), p2Y = 360 + 98 * Math.sin(ang2);
         const armPid = BASE_ARM_IDS_8[i];
         const isActive = players.some(p => p.id === armPid);
         const def = PLAYER_DEFS[armPid] || PLAYER_DEFS.green;
@@ -1350,12 +1361,12 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
           />
         );
       })}
-      <circle cx="360" cy="360" r="18" fill="rgba(11,15,25,0.95)" stroke="rgba(255,255,255,0.4)" strokeWidth="1" />
+      <circle cx="360" cy="360" r="22" fill="rgba(11,15,25,0.95)" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
       <text
         x="360"
-        y="366"
+        y="367"
         textAnchor="middle"
-        fontSize="18"
+        fontSize="20"
         fill="#ffffff"
         style={{ filter: 'drop-shadow(0 0 10px rgba(255,255,255,0.8))' }}
       >
@@ -1367,13 +1378,13 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
         const finishedCount = p.tokens.filter(t => t.progress === maxProg).length;
         if (!finishedCount) return null;
         const ang = angles[pIdx];
-        const fx = 360 + 338 * Math.cos(ang);
-        const fy = 360 + 338 * Math.sin(ang);
+        const fx = 360 + 348 * Math.cos(ang);
+        const fy = 360 + 348 * Math.sin(ang);
         const def = PLAYER_DEFS[p.id];
         return (
           <g key={`oct-fin-${p.id}`}>
-            <circle cx={fx} cy={fy} r={14} fill="rgba(0,0,0,0.85)" stroke={def.colorHex} strokeWidth="1.5" />
-            <text x={fx} y={fy + 4.5} textAnchor="middle" fontSize="12" fontWeight="900" fill={def.colorHex}>
+            <circle cx={fx} cy={fy} r={15} fill="rgba(0,0,0,0.85)" stroke={def.colorHex} strokeWidth="1.5" />
+            <text x={fx} y={fy + 4.5} textAnchor="middle" fontSize="13" fontWeight="900" fill={def.colorHex}>
               {finishedCount}
             </text>
           </g>
@@ -2042,67 +2053,63 @@ export default function NeonLudoGame() {
             </div>
           </div>
 
-          {/* Board Area filling available screen */}
-          <div className="nludo-fs-board-wrap">
-            {renderBoard()}
-            {capturedEffect && (
-              <div className="nludo-capture-banner">
-                <div className="nludo-capture-title">💥 CAPTURE!</div>
-                <div className="nludo-capture-desc">
-                  <span style={{ color: capturedEffect.capturerColor, fontWeight: 900 }}>{capturedEffect.capturerName}</span>
-                  {' captured '}
-                  <span style={{ color: capturedEffect.capturedColor, fontWeight: 900 }}>{capturedEffect.capturedName}</span>
-                  {'!'}
+          {/* Fullscreen Stage (Board + Tappable Dice) */}
+          <div className="nludo-fs-stage">
+            {/* Maximized Board */}
+            <div className="nludo-fs-board-wrap">
+              {renderBoard()}
+              {capturedEffect && (
+                <div className="nludo-capture-banner">
+                  <div className="nludo-capture-title">💥 CAPTURE!</div>
+                  <div className="nludo-capture-desc">
+                    <span style={{ color: capturedEffect.capturerColor, fontWeight: 900 }}>{capturedEffect.capturerName}</span>
+                    {' captured '}
+                    <span style={{ color: capturedEffect.capturedColor, fontWeight: 900 }}>{capturedEffect.capturedName}</span>
+                    {'!'}
+                  </div>
+                  <div className="nludo-capture-sub">Sent back to base • Bonus Roll Awarded 🎯</div>
                 </div>
-                <div className="nludo-capture-sub">Sent back to base • Bonus Roll Awarded 🎯</div>
-              </div>
-            )}
-          </div>
-
-          {/* Bottom compact dice panel */}
-          <div className="nludo-fs-bottom">
-            <div
-              className="nludo-dice-card--compact"
-              style={curDef ? { borderColor: `${curDef.colorHex}60`, boxShadow: `0 0 20px ${curDef.glowColor}25` } : {}}
-            >
-              <div className="nludo-dice-wrap">
-                <DiceFace
-                  value={diceValue || 1}
-                  rolling={diceRolling}
-                  colorHex={curDef?.colorHex}
-                  glowColor={curDef?.glowColor}
-                />
-              </div>
-              <div
-                className="nludo-dice-val"
-                style={{ color: curDef ? curDef.colorHex : '#64748b', fontWeight: 800 }}
-              >
-                {diceValue ? `Rolled: ${diceValue}` : `${currentPlayer?.label || 'Player'}'s turn`}
-              </div>
-              <button
-                type="button"
-                className="nludo-roll-btn"
-                onClick={doRollDice}
-                disabled={phase !== 'roll' || currentPlayer?.isBot}
-                aria-label="Roll Dice"
-                style={curDef && phase === 'roll' && !currentPlayer?.isBot ? {
-                  borderColor: curDef.colorHex,
-                  boxShadow: `0 0 14px ${curDef.glowColor}`,
-                } : curDef ? {
-                  borderColor: `${curDef.colorHex}50`,
-                } : {}}
-              >
-                {diceRolling
-                  ? 'Rolling...'
-                  : diceValue && phase === 'move'
-                  ? `Rolled ${diceValue}`
-                  : `🎲 Roll Dice`}
-              </button>
-              {phase === 'move' && !currentPlayer?.isBot && (
-                <p className="nludo-hint" style={{ color: curDef?.colorHex || '#06b6d4' }}>
-                  Tap a highlighted token to move
-                </p>
               )}
+            </div>
+
+            {/* Centered Tappable Dice Panel — no Roll button, tap dice directly */}
+            <div className="nludo-fs-dice-panel">
+              <div
+                className="nludo-fs-dice-card"
+                style={curDef ? { borderColor: `${curDef.colorHex}55`, boxShadow: `0 0 28px ${curDef.glowColor}25` } : {}}
+              >
+                {/* Tappable Dice — centered, breathing when idle, tap-bounce when rolling */}
+                <div className="nludo-fs-dice-wrap">
+                  <DiceFace
+                    value={diceValue || 1}
+                    rolling={diceRolling}
+                    colorHex={curDef?.colorHex}
+                    glowColor={curDef?.glowColor}
+                    onClick={doRollDice}
+                    interactive={phase === 'roll' && !currentPlayer?.isBot && !diceRolling}
+                    idle={phase === 'roll' && !currentPlayer?.isBot && !diceRolling}
+                  />
+                </div>
+
+                {/* Status text directly below dice */}
+                <div className="nludo-fs-dice-label">
+                  {diceRolling ? (
+                    <span className="nludo-fs-dice-rolling-text">Rolling...</span>
+                  ) : phase === 'move' && !currentPlayer?.isBot ? (
+                    <span className="nludo-fs-dice-hint" style={{ color: curDef?.colorHex || '#06b6d4' }}>
+                      Tap a token to move
+                    </span>
+                  ) : currentPlayer?.isBot ? (
+                    <span className="nludo-fs-dice-hint">Bot is thinking...</span>
+                  ) : diceValue ? (
+                    <span className="nludo-fs-dice-result" style={{ color: curDef?.colorHex }}>
+                      Rolled {diceValue}
+                    </span>
+                  ) : (
+                    <span className="nludo-fs-dice-tap-prompt">Tap to roll</span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

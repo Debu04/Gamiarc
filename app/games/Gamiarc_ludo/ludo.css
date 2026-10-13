@@ -1482,7 +1482,7 @@ section { padding: 80px 0; }
 
 .nludo-board-wrap {
   width: 100%;
-  max-width: min(100%, 560px);
+  max-width: min(100%, 650px);
   aspect-ratio: 1 / 1;
   position: relative;
   border-radius: 16px;
@@ -1496,6 +1496,11 @@ section { padding: 80px 0; }
 }
 
 @media (max-width: 640px) {
+  #arena .container,
+  .game-arena-section .container {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
   .nludo-board-wrap {
     max-width: 100%;
     width: 100%;
@@ -1780,13 +1785,38 @@ section { padding: 80px 0; }
 }
 .nludo-dice-wrap { width: 68px; height: 68px; }
 .nludo-dice { width: 100%; height: 100%; border-radius: 16px; transition: transform 0.1s; }
-.nludo-dice.rolling { animation: nludo-dice-spin 0.4s ease-out; }
+.nludo-dice.rolling { animation: nludo-dice-spin 0.38s ease-out forwards; }
 @keyframes nludo-dice-spin {
-  0% { transform: rotate(0deg) scale(1); }
-  25% { transform: rotate(-15deg) scale(1.1); }
-  50% { transform: rotate(15deg) scale(0.9); }
-  75% { transform: rotate(-8deg) scale(1.05); }
+  0%   { transform: rotate(0deg) scale(1); }
+  20%  { transform: rotate(-18deg) scale(1.15); }
+  50%  { transform: rotate(14deg) scale(0.88); }
+  75%  { transform: rotate(-8deg) scale(1.08); }
   100% { transform: rotate(0deg) scale(1); }
+}
+
+/* Idle breathing pulse — signals user to tap the dice */
+@keyframes nludo-dice-breathe {
+  0%, 100% { transform: scale(1);    filter: drop-shadow(0 0 8px var(--dice-glow, rgba(59,130,246,0.5))); }
+  50%       { transform: scale(1.07); filter: drop-shadow(0 0 18px var(--dice-glow, rgba(59,130,246,0.9))); }
+}
+.nludo-dice-idle {
+  animation: nludo-dice-breathe 1.8s ease-in-out infinite;
+}
+
+/* Tap/click micro-feedback */
+@keyframes nludo-dice-tap {
+  0%   { transform: scale(1); }
+  30%  { transform: scale(0.88); }
+  70%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+.nludo-dice-interactive:active {
+  animation: nludo-dice-tap 0.22s ease-out forwards;
+}
+.nludo-dice-interactive:hover {
+  filter: brightness(1.12);
+  transform: scale(1.04);
+  transition: transform 0.15s ease, filter 0.15s ease;
 }
 .nludo-dice-val { font-size: 0.75rem; color: #64748b; font-weight: 600; }
 .nludo-roll-btn {
@@ -2029,110 +2059,270 @@ section { padding: 80px 0; }
   box-shadow: 0 0 16px rgba(239,68,68,0.35) !important;
 }
 
-/* ── Board in fullscreen ── */
-.nludo-fs-board-wrap {
+/* ── Fullscreen Stage (Board + Square Dice Layout) ── */
+.nludo-fs-stage {
   flex: 1;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  box-sizing: border-box;
+}
+
+/* ── Desktop & Large Tablet Screens (Side-by-side Layout) ── */
+@media (min-width: 861px) {
+  .nludo-fs-stage {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 36px;
+    padding: 14px 28px;
+    overflow: hidden;
+  }
+
+  .nludo-fs-board-wrap {
+    flex: 1;
+    height: 100%;
+    max-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 0;
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .nludo-fs-board-wrap .nludo-board-svg {
+    height: 100%;
+    width: auto;
+    max-height: calc(100vh - 84px);
+    max-width: calc(100vh - 84px);
+    aspect-ratio: 1 / 1;
+    display: block;
+    filter: drop-shadow(0 0 40px rgba(0, 0, 0, 0.7));
+  }
+
+  /* Desktop dice panel: centered column beside board */
+  .nludo-fs-dice-panel {
+    flex-shrink: 0;
+    width: 220px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Dice card: no rigid background box, just center dice + text */
+  .nludo-fs-dice-card {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+  }
+
+  .nludo-fs-dice-wrap {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nludo-fs-dice-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .nludo-fs-turn-hint {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin: 0;
+  }
+
+  .nludo-fs-roll-btn {
+    width: 100%;
+    min-height: 48px;
+    font-size: 1.02rem;
+    font-weight: 800;
+    border-radius: 14px;
+  }
+}
+
+/* ── Mobile & Narrow Screens (Vertical Stack with Zero Wasted Void) ── */
+@media (max-width: 860px) {
+  .nludo-fs-stage {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0;
+    padding: 0 10px 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Top spacer for future ad banner — leaves ~48px of breathing room between topbar and board */
+  .nludo-fs-stage::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 48px;
+    flex-shrink: 0;
+  }
+
+  .nludo-fs-board-wrap {
+    flex-shrink: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    position: relative;
+  }
+
+  /* Board expands to maximum comfortable square size on mobile */
+  .nludo-fs-board-wrap .nludo-board-svg {
+    width: 100%;
+    max-width: min(100vw - 12px, 56vh);
+    max-height: 56vh;
+    aspect-ratio: 1 / 1;
+    display: block;
+    margin: 0 auto;
+    filter: drop-shadow(0 0 25px rgba(0, 0, 0, 0.6));
+  }
+
+  /* Centered tappable dice panel — just die + text, no heavy card box */
+  .nludo-fs-dice-panel {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 14px;
+    padding: 0;
+  }
+
+  .nludo-fs-dice-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 10px;
+  }
+
+  .nludo-fs-dice-wrap {
+    width: 90px;
+    height: 90px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nludo-fs-dice-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .nludo-fs-turn-hint {
+    font-size: 0.74rem;
+    color: #94a3b8;
+    margin: 0;
+  }
+
+  .nludo-fs-roll-btn {
+    width: 100%;
+    min-height: 44px;
+    font-size: 0.94rem;
+    font-weight: 800;
+    border-radius: 12px;
+  }
+}
+
+/* ── Landscape mode on mobile devices ── */
+@media (max-height: 540px) and (orientation: landscape) {
+  .nludo-fs-stage {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 6px 16px;
+    overflow-y: hidden;
+  }
+
+  /* Override the mobile ::before spacer in landscape */
+  .nludo-fs-stage::before {
+    display: none;
+  }
+
+  .nludo-fs-board-wrap {
+    height: 100%;
+    flex: 1;
+  }
+
+  .nludo-fs-board-wrap .nludo-board-svg {
+    max-height: calc(100vh - 56px);
+    max-width: calc(100vh - 56px);
+  }
+
+  .nludo-fs-dice-panel {
+    width: 160px;
+    flex-shrink: 0;
+    margin-top: 0;
+  }
+
+  .nludo-fs-dice-wrap {
+    width: 72px;
+    height: 72px;
+  }
+}
+
+/* ── Fullscreen Dice Label Texts (below tappable dice) ── */
+.nludo-fs-dice-label {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  min-height: 0;
-  position: relative;
-  padding: 6px;
-  box-sizing: border-box;
+  min-height: 22px;
 }
 
-/* The SVG board fills maximum available space in viewport */
-.nludo-fs-board-wrap .nludo-board-svg {
-  width: 100%;
-  height: 100%;
-  max-width: min(100vw - 16px, 100vh - 160px);
-  max-height: min(100vw - 16px, 100vh - 160px);
-  display: block;
-}
-
-/* ── Bottom dice area in fullscreen ── */
-.nludo-fs-bottom {
-  width: 100%;
-  flex-shrink: 0;
-  padding: 8px 14px 10px;
-  box-sizing: border-box;
-  border-top: 1px solid rgba(255,255,255,0.07);
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(12px);
-}
-
-/* Compact dice card layout for fullscreen */
-.nludo-dice-card--compact {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 12px !important;
-  padding: 8px 12px !important;
-  border-radius: 14px !important;
-  background: rgba(0, 0, 0, 0.4) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  flex-wrap: wrap;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.nludo-dice-card--compact .nludo-dice-wrap {
-  width: 48px !important;
-  height: 48px !important;
-  flex-shrink: 0;
-}
-
-.nludo-dice-card--compact .nludo-dice-val {
-  min-width: 80px;
-  font-size: 0.78rem;
+/* "Tap to roll" prompt — pulsing invitation */
+.nludo-fs-dice-tap-prompt {
+  font-size: 0.82rem;
   font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+  animation: pulse 2s ease-in-out infinite;
 }
 
-.nludo-dice-card--compact .nludo-roll-btn {
-  flex: 1;
-  min-width: 110px;
-  padding: 10px 14px;
-  min-height: 40px;
-  font-size: 0.88rem;
+/* "Rolling..." text during animation */
+.nludo-fs-dice-rolling-text {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  letter-spacing: 0.06em;
 }
 
-.nludo-dice-card--compact .nludo-hint {
-  width: 100%;
-  flex-basis: 100%;
-  margin: 0;
-  font-size: 0.72rem;
+/* "Rolled 3" result text after rolling */
+.nludo-fs-dice-result {
+  font-size: 1.0rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
 }
 
-/* ── Small Mobile Screen Tweaks (<=600px) ── */
-@media (max-width: 600px) {
-  .nludo-fs-topbar {
-    padding: 6px 10px;
-  }
-  .nludo-fs-turn-name {
-    font-size: 0.88rem;
-  }
-  .nludo-fs-status {
-    font-size: 0.7rem;
-  }
-  .nludo-fs-board-wrap {
-    padding: 2px;
-  }
-  .nludo-fs-board-wrap .nludo-board-svg {
-    max-width: min(100vw - 8px, 100vh - 145px);
-    max-height: min(100vw - 8px, 100vh - 145px);
-  }
-  .nludo-fs-bottom {
-    padding: 6px 8px 8px;
-  }
-  .nludo-dice-card--compact .nludo-dice-wrap {
-    width: 44px !important;
-    height: 44px !important;
-  }
-  .nludo-dice-card--compact .nludo-roll-btn {
-    font-size: 0.82rem;
-    padding: 8px 10px;
-    min-height: 38px;
-  }
+/* "Tap a token to move" / "Bot is thinking..." hint */
+.nludo-fs-dice-hint {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #94a3b8;
+  text-align: center;
 }
+
+
 
