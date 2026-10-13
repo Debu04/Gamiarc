@@ -635,7 +635,7 @@ function VictoryScreen({ winner, players, playerCount, onPlayAgain, onNewGame })
 // DICE COMPONENT
 // ============================================================
 
-function DiceFace({ value, rolling, colorHex, glowColor }) {
+function DiceFace({ value, rolling, colorHex, glowColor, onClick, interactive, idle }) {
   const dotPositions = {
     1: [[50, 50]],
     2: [[25, 25], [75, 75]],
@@ -648,8 +648,23 @@ function DiceFace({ value, rolling, colorHex, glowColor }) {
   const strokeColor = colorHex || '#3b82f6';
   const shadowColor = glowColor || 'rgba(59,130,246,0.6)';
 
+  const classNames = [
+    'nludo-dice',
+    rolling ? 'rolling' : '',
+    interactive ? 'nludo-dice-interactive' : '',
+    idle ? 'nludo-dice-idle' : '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div className={`nludo-dice ${rolling ? 'rolling' : ''}`}>
+    <div
+      className={classNames}
+      onClick={interactive ? onClick : undefined}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={interactive ? 'Roll dice' : undefined}
+      onKeyDown={interactive ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick && onClick(); } } : undefined}
+      style={interactive ? { cursor: 'pointer', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' } : {}}
+    >
       <svg viewBox="0 0 100 100" width="100%" height="100%">
         <rect
           x="3" y="3" width="94" height="94" rx="18" ry="18"
@@ -2038,7 +2053,7 @@ export default function NeonLudoGame() {
             </div>
           </div>
 
-          {/* Fullscreen Stage (Board + Square Dice) */}
+          {/* Fullscreen Stage (Board + Tappable Dice) */}
           <div className="nludo-fs-stage">
             {/* Maximized Board */}
             <div className="nludo-fs-board-wrap">
@@ -2057,59 +2072,43 @@ export default function NeonLudoGame() {
               )}
             </div>
 
-            {/* Square Interactive Dice Card positioned directly next to / under board */}
+            {/* Centered Tappable Dice Panel — no Roll button, tap dice directly */}
             <div className="nludo-fs-dice-panel">
               <div
                 className="nludo-fs-dice-card"
-                style={curDef ? { borderColor: `${curDef.colorHex}70`, boxShadow: `0 0 28px ${curDef.glowColor}30` } : {}}
+                style={curDef ? { borderColor: `${curDef.colorHex}55`, boxShadow: `0 0 28px ${curDef.glowColor}25` } : {}}
               >
-                <div className="nludo-fs-dice-top">
-                  <div className="nludo-fs-dice-wrap">
-                    <DiceFace
-                      value={diceValue || 1}
-                      rolling={diceRolling}
-                      colorHex={curDef?.colorHex}
-                      glowColor={curDef?.glowColor}
-                    />
-                  </div>
-                  <div className="nludo-fs-dice-meta">
-                    <div
-                      className="nludo-dice-val"
-                      style={{ color: curDef ? curDef.colorHex : '#64748b', fontWeight: 800, fontSize: '0.95rem' }}
-                    >
-                      {diceValue ? `Rolled: ${diceValue}` : `${currentPlayer?.label || 'Player'}'s turn`}
-                    </div>
-                    {phase === 'move' && !currentPlayer?.isBot ? (
-                      <p className="nludo-hint" style={{ color: curDef?.colorHex || '#06b6d4', margin: 0 }}>
-                        Tap a highlighted token to move
-                      </p>
-                    ) : (
-                      <p className="nludo-fs-turn-hint">
-                        {currentPlayer?.isBot ? 'Bot taking turn...' : 'Ready to roll'}
-                      </p>
-                    )}
-                  </div>
+                {/* Tappable Dice — centered, breathing when idle, tap-bounce when rolling */}
+                <div className="nludo-fs-dice-wrap">
+                  <DiceFace
+                    value={diceValue || 1}
+                    rolling={diceRolling}
+                    colorHex={curDef?.colorHex}
+                    glowColor={curDef?.glowColor}
+                    onClick={doRollDice}
+                    interactive={phase === 'roll' && !currentPlayer?.isBot && !diceRolling}
+                    idle={phase === 'roll' && !currentPlayer?.isBot && !diceRolling}
+                  />
                 </div>
 
-                <button
-                  type="button"
-                  className="nludo-roll-btn nludo-fs-roll-btn"
-                  onClick={doRollDice}
-                  disabled={phase !== 'roll' || currentPlayer?.isBot}
-                  aria-label="Roll Dice"
-                  style={curDef && phase === 'roll' && !currentPlayer?.isBot ? {
-                    borderColor: curDef.colorHex,
-                    boxShadow: `0 0 18px ${curDef.glowColor}`,
-                  } : curDef ? {
-                    borderColor: `${curDef.colorHex}50`,
-                  } : {}}
-                >
-                  {diceRolling
-                    ? 'Rolling...'
-                    : diceValue && phase === 'move'
-                    ? `Rolled ${diceValue}`
-                    : `🎲 Roll Dice`}
-                </button>
+                {/* Status text directly below dice */}
+                <div className="nludo-fs-dice-label">
+                  {diceRolling ? (
+                    <span className="nludo-fs-dice-rolling-text">Rolling...</span>
+                  ) : phase === 'move' && !currentPlayer?.isBot ? (
+                    <span className="nludo-fs-dice-hint" style={{ color: curDef?.colorHex || '#06b6d4' }}>
+                      Tap a token to move
+                    </span>
+                  ) : currentPlayer?.isBot ? (
+                    <span className="nludo-fs-dice-hint">Bot is thinking...</span>
+                  ) : diceValue ? (
+                    <span className="nludo-fs-dice-result" style={{ color: curDef?.colorHex }}>
+                      Rolled {diceValue}
+                    </span>
+                  ) : (
+                    <span className="nludo-fs-dice-tap-prompt">Tap to roll</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
