@@ -677,10 +677,10 @@ function DiceFace({ value, rolling, colorHex, glowColor }) {
 // TOKEN COMPONENT
 // ============================================================
 
-function TokenCircle({ pid, ti, cx, cy, r = 11, isMovable, onTokenClick }) {
+function TokenCircle({ pid, ti, cx, cy, r = 13, isMovable, onTokenClick }) {
   const color = PLAYER_DEFS[pid]?.colorHex || '#fff';
   const movable = isMovable(pid, ti);
-  const hitRadius = Math.max(r + 10, 20);
+  const hitRadius = Math.max(r + 14, 26);
 
   return (
     <g
@@ -696,12 +696,13 @@ function TokenCircle({ pid, ti, cx, cy, r = 11, isMovable, onTokenClick }) {
       aria-label={movable ? `Move ${PLAYER_DEFS[pid]?.label || pid} token ${ti + 1}` : undefined}
       style={{ cursor: movable ? 'pointer' : 'default', touchAction: 'manipulation' }}
     >
+      {/* Generous touch/click hit area for effortless mobile finger tapping */}
       <circle cx={cx} cy={cy} r={hitRadius} fill="transparent" pointerEvents="all" />
 
       {movable && (
         <>
-          <circle cx={cx} cy={cy} r={r + 6} fill={color} opacity="0.3" className="nludo-token-pulse" />
-          <circle cx={cx} cy={cy} r={r + 3} fill="none" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="3 2" className="nludo-token-ring" />
+          <circle cx={cx} cy={cy} r={r + 7} fill={color} opacity="0.35" className="nludo-token-pulse" />
+          <circle cx={cx} cy={cy} r={r + 3.5} fill="none" stroke="#ffffff" strokeWidth="2" strokeDasharray="4 2" className="nludo-token-ring" />
         </>
       )}
 
@@ -710,11 +711,11 @@ function TokenCircle({ pid, ti, cx, cy, r = 11, isMovable, onTokenClick }) {
         cy={cy}
         r={r}
         fill={color}
-        stroke={movable ? '#ffffff' : 'rgba(255,255,255,0.6)'}
-        strokeWidth={movable ? 2.5 : 1.5}
+        stroke={movable ? '#ffffff' : 'rgba(255,255,255,0.75)'}
+        strokeWidth={movable ? 2.5 : 1.8}
         style={{
-          filter: movable ? `drop-shadow(0 0 8px ${color})` : `drop-shadow(0 0 3px ${color})`,
-          transform: movable ? 'scale(1.12)' : 'scale(1)',
+          filter: movable ? `drop-shadow(0 0 10px ${color})` : `drop-shadow(0 0 4px ${color})`,
+          transform: movable ? 'scale(1.15)' : 'scale(1)',
           transformOrigin: `${cx}px ${cy}px`,
           transition: 'transform 0.15s ease, filter 0.15s ease',
         }}
@@ -726,7 +727,7 @@ function TokenCircle({ pid, ti, cx, cy, r = 11, isMovable, onTokenClick }) {
         x={cx}
         y={cy + 3.5}
         textAnchor="middle"
-        fontSize={r > 10 ? '9' : '8'}
+        fontSize={r >= 12 ? '10' : '9'}
         fontWeight="900"
         fill="#ffffff"
         style={{ pointerEvents: 'none', userSelect: 'none' }}
@@ -829,7 +830,7 @@ function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick, p
                   ti={tokenIndex}
                   cx={x + CELL_4/2 + offsetX}
                   cy={y + CELL_4/2 + offsetY}
-                  r={spread ? 8 : 11}
+                  r={spread ? 11 : 15}
                   isMovable={isMovable}
                   onTokenClick={onTokenClick}
                 />
@@ -861,7 +862,7 @@ function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick, p
                   ti={tokenIndex}
                   cx={x + CELL_4/2}
                   cy={y + CELL_4/2}
-                  r={11}
+                  r={15}
                   isMovable={isMovable}
                   onTokenClick={onTokenClick}
                 />
@@ -884,14 +885,14 @@ function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick, p
 
           return (
             <g key={`base-${pid}-${slotIdx}`}>
-              <circle cx={cx} cy={cy} r={CELL_4/2 - 4} fill="rgba(10,10,10,0.5)" stroke="rgba(255,255,255,0.12)" strokeWidth="1" strokeDasharray="3 3" />
+              <circle cx={cx} cy={cy} r={CELL_4/2 - 2} fill="rgba(10,10,10,0.5)" stroke="rgba(255,255,255,0.14)" strokeWidth="1" strokeDasharray="3 3" />
               {tokenEntry && (
                 <TokenCircle
                   pid={tokenEntry.playerId}
                   ti={tokenEntry.tokenIndex}
                   cx={cx}
                   cy={cy}
-                  r={13}
+                  r={16}
                   isMovable={isMovable}
                   onTokenClick={onTokenClick}
                 />
@@ -1168,7 +1169,7 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                   <circle
                     cx={pt.x}
                     cy={pt.y}
-                    r="12.5"
+                    r="15"
                     fill="rgba(10,10,10,0.5)"
                     stroke={isActive ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.04)'}
                     strokeWidth="1"
@@ -1180,7 +1181,7 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                       ti={tokenEntry.tokenIndex}
                       cx={pt.x}
                       cy={pt.y}
-                      r={12}
+                      r={14.5}
                       isMovable={isMovable}
                       onTokenClick={onTokenClick}
                     />
@@ -1219,11 +1220,11 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
           <g key={`oct-track-${absIdx}`}>
             <g transform={`translate(${pt.x}, ${pt.y}) rotate(${deg})`}>
               <rect
-                x="-11"
-                y="-11"
-                width="22"
-                height="22"
-                rx="4"
+                x="-12"
+                y="-12"
+                width="24"
+                height="24"
+                rx="5"
                 fill={cellFill}
                 stroke={cellStroke}
                 strokeWidth={isStart ? 1.5 : 1}
@@ -1252,7 +1253,7 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                   ti={tokenIndex}
                   cx={pt.x + offsetX}
                   cy={pt.y + offsetY}
-                  r={spread ? 8 : 11}
+                  r={spread ? 10 : 13.5}
                   isMovable={isMovable}
                   onTokenClick={onTokenClick}
                 />
@@ -1277,11 +1278,11 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
             <g key={`oct-home-${armPid}-${laneIdx}`}>
               <g transform={`translate(${pt.x}, ${pt.y}) rotate(${deg})`}>
                 <rect
-                  x="-11"
-                  y="-11"
-                  width="22"
-                  height="22"
-                  rx="4"
+                  x="-12"
+                  y="-12"
+                  width="24"
+                  height="24"
+                  rx="5"
                   fill={isActive ? def.homeColor : 'rgba(255,255,255,0.02)'}
                   stroke={isActive ? def.glowColor : 'rgba(255,255,255,0.06)'}
                   strokeWidth="1.5"
@@ -1319,7 +1320,7 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                   ti={tokenIndex}
                   cx={pt.x}
                   cy={pt.y}
-                  r={11}
+                  r={13.5}
                   isMovable={isMovable}
                   onTokenClick={onTokenClick}
                 />
@@ -1386,6 +1387,8 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
 // MAIN GAME CONTROLLER
 // ============================================================
 
+const STORAGE_KEY = 'gamiarc_neon_ludo_save_v1';
+
 export default function NeonLudoGame() {
   const [screen, setScreen] = useState('lobby');
   const [config, setConfig] = useState(null);
@@ -1401,6 +1404,8 @@ export default function NeonLudoGame() {
   const [capturedEffect, setCapturedEffect] = useState(null);
   const [statusMsg, setStatusMsg] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hasHydrated, setHasHydrated] = useState(false);
 
   const audioCtxRef = useRef(null);
   const timerRef = useRef(null);
@@ -1415,6 +1420,84 @@ export default function NeonLudoGame() {
   useEffect(() => { phaseRef.current = phase; }, [phase]);
   useEffect(() => { configRef.current = config; }, [config]);
   useEffect(() => { soundEnabledRef.current = soundEnabled; }, [soundEnabled]);
+
+  // 1. REHYDRATE SAVED GAME ON MOUNT (Prevent reload/refresh from losing match)
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw);
+        if (saved && saved.screen && saved.players && saved.players.length > 0 && saved.config) {
+          setScreen(saved.screen);
+          setConfig(saved.config);
+          setPlayers(saved.players);
+          setCurrentIdx(saved.currentIdx || 0);
+          setDiceValue(saved.diceValue ?? null);
+          setPhase(saved.phase || 'roll');
+          setLogEntries(saved.logEntries || []);
+          setWinner(saved.winner || null);
+          setStatusMsg(saved.statusMsg || 'Match resumed.');
+          if (typeof saved.soundEnabled === 'boolean') {
+            setSoundEnabled(saved.soundEnabled);
+          }
+          setHasHydrated(true);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Could not restore Neon Ludo game:', e);
+    }
+    setHasHydrated(true);
+  }, []);
+
+  // 2. RESUME SAVED MATCH ACTIONS AFTER HYDRATION
+  useEffect(() => {
+    if (!hasHydrated || screen !== 'game') return;
+    const curPlayer = players[currentIdx];
+    if (!curPlayer) return;
+
+    if (curPlayer.isBot) {
+      if (phase === 'roll') {
+        delay(1000, () => doBotRoll(players, currentIdx, curPlayer.difficulty, config?.playerCount || 4));
+      } else if (phase === 'move' && diceValue) {
+        const movable = getMovableTokens(curPlayer, diceValue, config?.playerCount || 4);
+        if (movable.length) {
+          const choice = chooseBotMove(curPlayer, currentIdx, diceValue, movable, players, curPlayer.difficulty || 'normal', config?.playerCount || 4);
+          delay(1000, () => doMoveToken(players, currentIdx, choice, diceValue, config?.playerCount || 4));
+        } else {
+          delay(1000, () => advanceTurn(players, currentIdx, false, config?.playerCount || 4));
+        }
+      }
+    } else if (!curPlayer.isBot && phase === 'move' && diceValue) {
+      const movable = getMovableTokens(curPlayer, diceValue, config?.playerCount || 4);
+      setMovableTokens(movable);
+    }
+  }, [hasHydrated]);
+
+  // 3. PERSIST CURRENT MATCH TO LOCALSTORAGE UNTIL EXPLICITLY RESET
+  useEffect(() => {
+    if (!hasHydrated) return;
+    try {
+      if (screen === 'lobby') {
+        localStorage.removeItem(STORAGE_KEY);
+      } else if (screen === 'game' || screen === 'victory') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          screen,
+          config,
+          players,
+          currentIdx,
+          diceValue,
+          phase,
+          logEntries,
+          winner,
+          statusMsg,
+          soundEnabled,
+        }));
+      }
+    } catch (e) {
+      console.warn('Failed to save Neon Ludo game state:', e);
+    }
+  }, [hasHydrated, screen, config, players, currentIdx, diceValue, phase, logEntries, winner, statusMsg, soundEnabled]);
 
   function triggerSound(type) {
     playAudioEffect(type, soundEnabledRef.current, audioCtxRef);
@@ -1431,6 +1514,25 @@ export default function NeonLudoGame() {
   function delay(ms, fn) {
     clearTimer();
     timerRef.current = setTimeout(fn, ms);
+  }
+
+  // Explicit Reset: cleans storage and returns to Lobby
+  function handleResetGame() {
+    clearTimer();
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (e) {}
+    setScreen('lobby');
+    setConfig(null);
+    setPlayers([]);
+    setCurrentIdx(0);
+    setDiceValue(null);
+    setPhase('roll');
+    setLogEntries([]);
+    setWinner(null);
+    setMovableTokens([]);
+    setCapturedEffect(null);
+    setStatusMsg('');
   }
 
   function startGame(cfg) {
@@ -1663,6 +1765,36 @@ export default function NeonLudoGame() {
     }
   }
 
+  // Fullscreen toggle handler with browser API synchronization
+  function toggleFullscreen() {
+    if (!isFullscreen) {
+      setIsFullscreen(true);
+      try {
+        if (document.documentElement.requestFullscreen && !document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        }
+      } catch (e) {}
+    } else {
+      setIsFullscreen(false);
+      try {
+        if (document.fullscreenElement && document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        }
+      } catch (e) {}
+    }
+  }
+
+  // Handle native ESC / exit fullscreen events
+  useEffect(() => {
+    function onFsChange() {
+      if (!document.fullscreenElement && isFullscreen) {
+        setIsFullscreen(false);
+      }
+    }
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, [isFullscreen]);
+
   // Keyboard accessibility
   useEffect(() => {
     function handleKeyDown(e) {
@@ -1682,19 +1814,21 @@ export default function NeonLudoGame() {
         setSoundEnabled(prev => !prev);
       } else if (e.key.toLowerCase() === 'h') {
         setShowHelp(prev => !prev);
+      } else if (e.key === 'Escape') {
+        if (isFullscreen) toggleFullscreen();
+      } else if (e.key.toLowerCase() === 'f') {
+        toggleFullscreen();
       }
     }
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [isFullscreen]);
 
   useEffect(() => () => clearTimer(), []);
 
   const currentPlayer = players[currentIdx];
   const curDef = currentPlayer ? PLAYER_DEFS[currentPlayer.id] : null;
   const activePlayerCount = config?.playerCount || 4;
-  const isMulti = activePlayerCount >= 5;
-  const homeStart = getHomeStretchStart(activePlayerCount);
 
   if (screen === 'lobby') {
     return (
@@ -1712,56 +1846,277 @@ export default function NeonLudoGame() {
           players={players}
           playerCount={activePlayerCount}
           onPlayAgain={() => startGame(config)}
-          onNewGame={() => setScreen('lobby')}
+          onNewGame={handleResetGame}
         />
       </div>
     );
   }
 
+  // Shared board renderer
+  const renderBoard = () => (
+    activePlayerCount >= 5 ? (
+      <Board8PlayerOctagon
+        players={players}
+        currentPlayerId={currentPlayer?.id}
+        movableTokens={phase === 'move' && !currentPlayer?.isBot ? movableTokens : []}
+        onTokenClick={handleTokenClick}
+      />
+    ) : (
+      <Board4Player
+        players={players}
+        currentPlayerId={currentPlayer?.id}
+        movableTokens={phase === 'move' && !currentPlayer?.isBot ? movableTokens : []}
+        onTokenClick={handleTokenClick}
+        playerCount={activePlayerCount}
+      />
+    )
+  );
+
+  // Unified Turn & Dice Card combining Turn info, Dice roll, and Mute + Fullscreen buttons in ONE place
+  const renderUnifiedTurnCard = (variant = 'desktop') => (
+    <div
+      className={`nludo-unified-turn-card nludo-unified-turn-card--${variant}`}
+      style={curDef ? { borderColor: `${curDef.colorHex}60`, boxShadow: `0 0 24px ${curDef.glowColor}25` } : {}}
+    >
+      {/* Top Header Row: Active Player Turn & Quick Action Buttons (Mute + Fullscreen in ONE place) */}
+      <div className="nludo-unified-header">
+        <div className="nludo-unified-turn-meta">
+          {currentPlayer && (
+            <>
+              <span
+                className="nludo-turn-dot"
+                style={{
+                  background: curDef?.colorHex || '#3b82f6',
+                  boxShadow: `0 0 12px ${curDef?.glowColor || '#3b82f6'}`,
+                }}
+              />
+              <div className="nludo-unified-player-titles">
+                <span className="nludo-turn-name">{currentPlayer.label}</span>
+                <span className="nludo-turn-type">{currentPlayer.isBot ? 'BOT' : 'YOU'}</span>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Mute and Fullscreen button together at ONE place */}
+        <div className="nludo-unified-actions">
+          <button
+            type="button"
+            className={`nludo-unified-action-btn ${soundEnabled ? 'active' : ''}`}
+            onClick={() => setSoundEnabled(prev => !prev)}
+            title={soundEnabled ? 'Mute Sound (M)' : 'Unmute Sound (M)'}
+            aria-label={soundEnabled ? 'Mute Sound' : 'Unmute Sound'}
+          >
+            <span aria-hidden="true">{soundEnabled ? '🔊' : '🔇'}</span>
+            <span className="nludo-action-text">{soundEnabled ? 'Sound' : 'Muted'}</span>
+          </button>
+
+          <button
+            type="button"
+            className={`nludo-unified-action-btn nludo-fs-action-btn ${isFullscreen ? 'active' : ''}`}
+            onClick={toggleFullscreen}
+            title={isFullscreen ? 'Exit Fullscreen (Esc / F)' : 'Fullscreen Focus (F)'}
+            aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+          >
+            {isFullscreen ? (
+              <>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>
+                </svg>
+                <span className="nludo-action-text">Exit Full</span>
+              </>
+            ) : (
+              <>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M8 3H5a2 2 0 0 0-2 2v3"/>
+                  <path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
+                  <path d="M3 16v3a2 2 0 0 0 2 2h3"/>
+                  <path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
+                </svg>
+                <span className="nludo-action-text">Fullscreen</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Status Message Line */}
+      <div className="nludo-unified-status-line">
+        <p className="nludo-status-msg">{statusMsg}</p>
+      </div>
+
+      {/* Dice & Roll Section */}
+      <div className="nludo-unified-dice-row">
+        <div className="nludo-dice-wrap">
+          <DiceFace
+            value={diceValue || 1}
+            rolling={diceRolling}
+            colorHex={curDef?.colorHex}
+            glowColor={curDef?.glowColor}
+          />
+        </div>
+
+        <div className="nludo-unified-dice-info">
+          <div
+            className="nludo-dice-val"
+            style={{ color: curDef ? curDef.colorHex : '#64748b', fontWeight: 800 }}
+          >
+            {diceValue ? `Rolled: ${diceValue}` : `${currentPlayer?.label || 'Player'}'s turn`}
+          </div>
+
+          <button
+            type="button"
+            className="nludo-roll-btn"
+            onClick={doRollDice}
+            disabled={phase !== 'roll' || currentPlayer?.isBot}
+            aria-label="Roll Dice"
+            style={curDef && phase === 'roll' && !currentPlayer?.isBot ? {
+              borderColor: curDef.colorHex,
+              boxShadow: `0 0 16px ${curDef.glowColor}`,
+            } : curDef ? {
+              borderColor: `${curDef.colorHex}50`,
+            } : {}}
+          >
+            {diceRolling
+              ? 'Rolling...'
+              : diceValue && phase === 'move'
+              ? `Rolled ${diceValue}`
+              : `🎲 Roll Dice`}
+          </button>
+        </div>
+      </div>
+
+      {phase === 'move' && !currentPlayer?.isBot && (
+        <p className="nludo-hint" style={{ color: curDef?.colorHex || '#06b6d4' }}>
+          Tap a highlighted token to move
+        </p>
+      )}
+    </div>
+  );
+
   return (
     <div className="nludo-shell">
       {showHelp && <HowToPlayModal onClose={() => setShowHelp(false)} playerCount={activePlayerCount} />}
 
-      <div className="nludo-game-layout">
-        {/* ── Board Area ── */}
-        <div className="nludo-board-area">
-          {/* Single Clean Mobile Turn Header */}
-          <div className="nludo-mobile-turn-bar">
-            <div className="nludo-mobile-turn-info">
+      {/* ── FULLSCREEN OVERLAY ── */}
+      {isFullscreen && (
+        <div className="nludo-fullscreen-overlay" role="dialog" aria-label="Fullscreen game mode">
+          {/* Top bar: turn info + mute + exit fullscreen */}
+          <div className="nludo-fs-topbar">
+            <div className="nludo-fs-turn-info">
               {currentPlayer && (
                 <>
                   <span
                     className="nludo-turn-dot"
                     style={{
-                      background: PLAYER_DEFS[currentPlayer.id]?.colorHex,
-                      boxShadow: `0 0 10px ${PLAYER_DEFS[currentPlayer.id]?.colorHex}`,
+                      background: curDef?.colorHex || '#3b82f6',
+                      boxShadow: `0 0 12px ${curDef?.glowColor || '#3b82f6'}`,
                     }}
                   />
-                  <span className="nludo-turn-name">{currentPlayer.label}</span>
+                  <span className="nludo-fs-turn-name">{currentPlayer.label}</span>
                   <span className="nludo-turn-type">{currentPlayer.isBot ? 'BOT' : 'YOU'}</span>
+                  <span className="nludo-fs-status">{statusMsg}</span>
                 </>
               )}
-              <span className="nludo-mobile-status">{statusMsg}</span>
+            </div>
+            <div className="nludo-fs-actions">
+              <button
+                type="button"
+                className={`nludo-unified-action-btn ${soundEnabled ? 'active' : ''}`}
+                onClick={() => setSoundEnabled(prev => !prev)}
+                title="Toggle Sound (M)"
+                aria-label="Toggle Sound"
+              >
+                <span>{soundEnabled ? '🔊' : '🔇'}</span>
+                <span className="nludo-action-text">{soundEnabled ? 'Sound' : 'Muted'}</span>
+              </button>
+              <button
+                type="button"
+                className="nludo-unified-action-btn nludo-fs-exit-btn"
+                onClick={toggleFullscreen}
+                title="Exit Fullscreen (Esc / F)"
+                aria-label="Exit fullscreen"
+              >
+                ✕ <span className="nludo-action-text">Exit</span>
+              </button>
             </div>
           </div>
 
-          <div className="nludo-board-wrap">
-            {activePlayerCount >= 5 ? (
-              <Board8PlayerOctagon
-                players={players}
-                currentPlayerId={currentPlayer?.id}
-                movableTokens={phase === 'move' && !currentPlayer?.isBot ? movableTokens : []}
-                onTokenClick={handleTokenClick}
-              />
-            ) : (
-              <Board4Player
-                players={players}
-                currentPlayerId={currentPlayer?.id}
-                movableTokens={phase === 'move' && !currentPlayer?.isBot ? movableTokens : []}
-                onTokenClick={handleTokenClick}
-                playerCount={activePlayerCount}
-              />
+          {/* Board Area filling available screen */}
+          <div className="nludo-fs-board-wrap">
+            {renderBoard()}
+            {capturedEffect && (
+              <div className="nludo-capture-banner">
+                <div className="nludo-capture-title">💥 CAPTURE!</div>
+                <div className="nludo-capture-desc">
+                  <span style={{ color: capturedEffect.capturerColor, fontWeight: 900 }}>{capturedEffect.capturerName}</span>
+                  {' captured '}
+                  <span style={{ color: capturedEffect.capturedColor, fontWeight: 900 }}>{capturedEffect.capturedName}</span>
+                  {'!'}
+                </div>
+                <div className="nludo-capture-sub">Sent back to base • Bonus Roll Awarded 🎯</div>
+              </div>
             )}
+          </div>
+
+          {/* Bottom compact dice panel */}
+          <div className="nludo-fs-bottom">
+            <div
+              className="nludo-dice-card--compact"
+              style={curDef ? { borderColor: `${curDef.colorHex}60`, boxShadow: `0 0 20px ${curDef.glowColor}25` } : {}}
+            >
+              <div className="nludo-dice-wrap">
+                <DiceFace
+                  value={diceValue || 1}
+                  rolling={diceRolling}
+                  colorHex={curDef?.colorHex}
+                  glowColor={curDef?.glowColor}
+                />
+              </div>
+              <div
+                className="nludo-dice-val"
+                style={{ color: curDef ? curDef.colorHex : '#64748b', fontWeight: 800 }}
+              >
+                {diceValue ? `Rolled: ${diceValue}` : `${currentPlayer?.label || 'Player'}'s turn`}
+              </div>
+              <button
+                type="button"
+                className="nludo-roll-btn"
+                onClick={doRollDice}
+                disabled={phase !== 'roll' || currentPlayer?.isBot}
+                aria-label="Roll Dice"
+                style={curDef && phase === 'roll' && !currentPlayer?.isBot ? {
+                  borderColor: curDef.colorHex,
+                  boxShadow: `0 0 14px ${curDef.glowColor}`,
+                } : curDef ? {
+                  borderColor: `${curDef.colorHex}50`,
+                } : {}}
+              >
+                {diceRolling
+                  ? 'Rolling...'
+                  : diceValue && phase === 'move'
+                  ? `Rolled ${diceValue}`
+                  : `🎲 Roll Dice`}
+              </button>
+              {phase === 'move' && !currentPlayer?.isBot && (
+                <p className="nludo-hint" style={{ color: curDef?.colorHex || '#06b6d4' }}>
+                  Tap a highlighted token to move
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── NORMAL GAME LAYOUT ── */}
+      <div className="nludo-game-layout">
+        {/* ── Board Area ── */}
+        <div className="nludo-board-area">
+          {/* On Mobile: Unified turn card sits directly above board! */}
+          {renderUnifiedTurnCard('mobile')}
+
+          <div className="nludo-board-wrap">
+            {renderBoard()}
 
             {/* Clear Capture Notification Banner */}
             {capturedEffect && (
@@ -1785,70 +2140,8 @@ export default function NeonLudoGame() {
 
         {/* ── Sidebar Controls ── */}
         <aside className="nludo-sidebar">
-          {/* Turn Card (Hidden on Mobile) */}
-          <div className="nludo-turn-card">
-            <div className="nludo-turn-header">
-              {currentPlayer && (
-                <>
-                  <span
-                    className="nludo-turn-dot"
-                    style={{
-                      background: PLAYER_DEFS[currentPlayer.id]?.colorHex,
-                      boxShadow: `0 0 10px ${PLAYER_DEFS[currentPlayer.id]?.colorHex}`,
-                    }}
-                  />
-                  <span className="nludo-turn-name">{currentPlayer.label}</span>
-                  <span className="nludo-turn-type">{currentPlayer.isBot ? 'BOT' : 'HUMAN'}</span>
-                </>
-              )}
-            </div>
-            <p className="nludo-status-msg">{statusMsg}</p>
-          </div>
-
-          {/* Dedicated Dice Card with Dynamic Turn Colors */}
-          <div
-            className="nludo-dice-card"
-            style={curDef ? { borderColor: `${curDef.colorHex}60`, boxShadow: `0 0 24px ${curDef.glowColor}25` } : {}}
-          >
-            <div className="nludo-dice-wrap">
-              <DiceFace
-                value={diceValue || 1}
-                rolling={diceRolling}
-                colorHex={curDef?.colorHex}
-                glowColor={curDef?.glowColor}
-              />
-            </div>
-            <div
-              className="nludo-dice-val"
-              style={{ color: curDef ? curDef.colorHex : '#64748b', fontWeight: 800 }}
-            >
-              {diceValue ? `Rolled: ${diceValue}` : `${currentPlayer?.label || 'Player'}'s turn`}
-            </div>
-            <button
-              type="button"
-              className="nludo-roll-btn"
-              onClick={doRollDice}
-              disabled={phase !== 'roll' || currentPlayer?.isBot}
-              aria-label="Roll Dice"
-              style={curDef && phase === 'roll' && !currentPlayer?.isBot ? {
-                borderColor: curDef.colorHex,
-                boxShadow: `0 0 14px ${curDef.glowColor}`,
-              } : curDef ? {
-                borderColor: `${curDef.colorHex}50`,
-              } : {}}
-            >
-              {diceRolling
-                ? 'Rolling...'
-                : diceValue && phase === 'move'
-                ? `Rolled ${diceValue}`
-                : `🎲 Roll Dice (${currentPlayer?.label || ''})`}
-            </button>
-            {phase === 'move' && !currentPlayer?.isBot && (
-              <p className="nludo-hint" style={{ color: curDef?.colorHex || '#06b6d4' }}>
-                Tap a highlighted token to move (or press 1–4)
-              </p>
-            )}
-          </div>
+          {/* On Desktop: Unified turn card sits at top of sidebar */}
+          {renderUnifiedTurnCard('desktop')}
 
           {/* Live Game Event Log */}
           <div className="nludo-log-card">
@@ -1864,24 +2157,16 @@ export default function NeonLudoGame() {
             </div>
           </div>
 
-          {/* Controls with Sound & Shortcuts */}
+          {/* Match Controls (Restart, Reset, Rules) */}
           <div className="nludo-controls-row">
-            <button
-              type="button"
-              className={`nludo-ctrl-btn ${soundEnabled ? 'active' : ''}`}
-              onClick={() => setSoundEnabled(prev => !prev)}
-              title="Toggle Sound (M)"
-            >
-              {soundEnabled ? '🔊 Sound' : '🔇 Muted'}
-            </button>
             <button type="button" className="nludo-ctrl-btn" onClick={() => setShowHelp(true)} title="Rules (H)">
               ❓ Rules
             </button>
-            <button type="button" className="nludo-ctrl-btn" onClick={() => startGame(config)} title="Restart (R)">
+            <button type="button" className="nludo-ctrl-btn" onClick={() => startGame(config)} title="Restart Match (R)">
               🔄 Restart
             </button>
-            <button type="button" className="nludo-ctrl-btn" onClick={() => setScreen('lobby')} title="New Setup">
-              🏠 Menu
+            <button type="button" className="nludo-ctrl-btn nludo-reset-btn" onClick={handleResetGame} title="Reset Game & Return to Menu">
+              ⏹️ Reset Game
             </button>
           </div>
         </aside>
