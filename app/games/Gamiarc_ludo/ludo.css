@@ -1482,7 +1482,7 @@ section { padding: 80px 0; }
 
 .nludo-board-wrap {
   width: 100%;
-  max-width: min(100%, 560px);
+  max-width: min(100%, 650px);
   aspect-ratio: 1 / 1;
   position: relative;
   border-radius: 16px;
@@ -1496,6 +1496,11 @@ section { padding: 80px 0; }
 }
 
 @media (max-width: 640px) {
+  #arena .container,
+  .game-arena-section .container {
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
   .nludo-board-wrap {
     max-width: 100%;
     width: 100%;
@@ -2029,110 +2034,251 @@ section { padding: 80px 0; }
   box-shadow: 0 0 16px rgba(239,68,68,0.35) !important;
 }
 
-/* ── Board in fullscreen ── */
-.nludo-fs-board-wrap {
+/* ── Fullscreen Stage (Board + Square Dice Layout) ── */
+.nludo-fs-stage {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: 100%;
   min-height: 0;
-  position: relative;
-  padding: 6px;
+  display: flex;
   box-sizing: border-box;
 }
 
-/* The SVG board fills maximum available space in viewport */
-.nludo-fs-board-wrap .nludo-board-svg {
-  width: 100%;
-  height: 100%;
-  max-width: min(100vw - 16px, 100vh - 160px);
-  max-height: min(100vw - 16px, 100vh - 160px);
-  display: block;
-}
-
-/* ── Bottom dice area in fullscreen ── */
-.nludo-fs-bottom {
-  width: 100%;
-  flex-shrink: 0;
-  padding: 8px 14px 10px;
-  box-sizing: border-box;
-  border-top: 1px solid rgba(255,255,255,0.07);
-  background: rgba(15, 23, 42, 0.85);
-  backdrop-filter: blur(12px);
-}
-
-/* Compact dice card layout for fullscreen */
-.nludo-dice-card--compact {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  gap: 12px !important;
-  padding: 8px 12px !important;
-  border-radius: 14px !important;
-  background: rgba(0, 0, 0, 0.4) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  flex-wrap: wrap;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.nludo-dice-card--compact .nludo-dice-wrap {
-  width: 48px !important;
-  height: 48px !important;
-  flex-shrink: 0;
-}
-
-.nludo-dice-card--compact .nludo-dice-val {
-  min-width: 80px;
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-
-.nludo-dice-card--compact .nludo-roll-btn {
-  flex: 1;
-  min-width: 110px;
-  padding: 10px 14px;
-  min-height: 40px;
-  font-size: 0.88rem;
-}
-
-.nludo-dice-card--compact .nludo-hint {
-  width: 100%;
-  flex-basis: 100%;
-  margin: 0;
-  font-size: 0.72rem;
-}
-
-/* ── Small Mobile Screen Tweaks (<=600px) ── */
-@media (max-width: 600px) {
-  .nludo-fs-topbar {
-    padding: 6px 10px;
+/* ── Desktop & Large Tablet Screens (Side-by-side Layout) ── */
+@media (min-width: 861px) {
+  .nludo-fs-stage {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 36px;
+    padding: 14px 28px;
+    overflow: hidden;
   }
-  .nludo-fs-turn-name {
-    font-size: 0.88rem;
-  }
-  .nludo-fs-status {
-    font-size: 0.7rem;
-  }
+
   .nludo-fs-board-wrap {
-    padding: 2px;
+    flex: 1;
+    height: 100%;
+    max-height: calc(100vh - 80px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    padding: 0;
+    min-height: 0;
+    min-width: 0;
   }
+
   .nludo-fs-board-wrap .nludo-board-svg {
-    max-width: min(100vw - 8px, 100vh - 145px);
-    max-height: min(100vw - 8px, 100vh - 145px);
+    height: 100%;
+    width: auto;
+    max-height: calc(100vh - 84px);
+    max-width: calc(100vh - 84px);
+    aspect-ratio: 1 / 1;
+    display: block;
+    filter: drop-shadow(0 0 40px rgba(0, 0, 0, 0.7));
   }
-  .nludo-fs-bottom {
-    padding: 6px 8px 8px;
+
+  .nludo-fs-dice-panel {
+    flex-shrink: 0;
+    width: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
-  .nludo-dice-card--compact .nludo-dice-wrap {
-    width: 44px !important;
-    height: 44px !important;
+
+  .nludo-fs-dice-card {
+    width: 100%;
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(18px);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+    box-sizing: border-box;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
-  .nludo-dice-card--compact .nludo-roll-btn {
-    font-size: 0.82rem;
-    padding: 8px 10px;
-    min-height: 38px;
+
+  .nludo-fs-dice-top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+  }
+
+  .nludo-fs-dice-wrap {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 600px;
+  }
+
+  .nludo-fs-dice-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .nludo-fs-turn-hint {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    margin: 0;
+  }
+
+  .nludo-fs-roll-btn {
+    width: 100%;
+    min-height: 48px;
+    font-size: 1.02rem;
+    font-weight: 800;
+    border-radius: 14px;
   }
 }
+
+/* ── Mobile & Narrow Screens (Vertical Stack with Zero Wasted Void) ── */
+@media (max-width: 860px) {
+  .nludo-fs-stage {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 8px 10px 16px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nludo-fs-board-wrap {
+    flex-shrink: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 0;
+    position: relative;
+  }
+
+  /* Board expands to maximum comfortable square size on mobile */
+  .nludo-fs-board-wrap .nludo-board-svg {
+    width: 100%;
+    max-width: min(100vw - 12px, 58vh);
+    max-height: 58vh;
+    aspect-ratio: 1 / 1;
+    display: block;
+    margin: 0 auto;
+    filter: drop-shadow(0 0 25px rgba(0, 0, 0, 0.6));
+  }
+
+  /* Square-styled Interactive Dice Card placed right beneath the board */
+  .nludo-fs-dice-panel {
+    width: 100%;
+    max-width: 340px;
+    display: flex;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 0 4px;
+  }
+
+  .nludo-fs-dice-card {
+    width: 100%;
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(16px);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 12px 16px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    box-sizing: border-box;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55);
+  }
+
+  .nludo-fs-dice-top {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    width: 100%;
+  }
+
+  .nludo-fs-dice-wrap {
+    width: 66px;
+    height: 66px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .nludo-fs-dice-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .nludo-fs-turn-hint {
+    font-size: 0.74rem;
+    color: #94a3b8;
+    margin: 0;
+  }
+
+  .nludo-fs-roll-btn {
+    width: 100%;
+    min-height: 44px;
+    font-size: 0.94rem;
+    font-weight: 800;
+    border-radius: 12px;
+  }
+}
+
+/* ── Landscape mode on mobile devices ── */
+@media (max-height: 540px) and (orientation: landscape) {
+  .nludo-fs-stage {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 6px 16px;
+    overflow-y: hidden;
+  }
+
+  .nludo-fs-board-wrap {
+    height: 100%;
+    flex: 1;
+  }
+
+  .nludo-fs-board-wrap .nludo-board-svg {
+    max-height: calc(100vh - 56px);
+    max-width: calc(100vh - 56px);
+  }
+
+  .nludo-fs-dice-panel {
+    width: 220px;
+    flex-shrink: 0;
+  }
+
+  .nludo-fs-dice-card {
+    padding: 10px 14px;
+    gap: 8px;
+    border-radius: 16px;
+  }
+
+  .nludo-fs-dice-wrap {
+    width: 54px;
+    height: 54px;
+  }
+}
+
 
