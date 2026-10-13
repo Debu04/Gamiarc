@@ -353,6 +353,17 @@ function Lobby({ onStart }) {
     7: true,
   });
 
+  const [playerNames, setPlayerNames] = useState({
+    0: '',
+    1: '',
+    2: '',
+    3: '',
+    4: '',
+    5: '',
+    6: '',
+    7: '',
+  });
+
   const getActivePlayerIds = useCallback(() => {
     if (playerCount === 2) return ['red', 'yellow'];
     if (playerCount === 3) return ['red', 'blue', 'yellow'];
@@ -459,7 +470,7 @@ function Lobby({ onStart }) {
 
         {/* Player Roster */}
         <div className="nludo-section">
-          <p className="nludo-section-label">Player Roster (Tap to Toggle Human / Bot)</p>
+          <p className="nludo-section-label">Player Roster (Tap Card to Toggle Human / Bot • Enter Custom Name for Humans)</p>
           <div className="nludo-roster-grid">
             {activeIds.map((pid, idx) => {
               const def = PLAYER_DEFS[pid];
@@ -471,16 +482,35 @@ function Lobby({ onStart }) {
                   onClick={() => toggleSlot(idx)}
                   style={{ borderColor: isBot ? 'rgba(255,255,255,0.08)' : `${def.colorHex}70` }}
                 >
-                  <span
-                    className="nludo-player-dot"
-                    style={{ background: def.colorHex, boxShadow: `0 0 10px ${def.colorHex}` }}
-                  />
-                  <div className="nludo-roster-info">
-                    <span className="nludo-roster-name">{def.label}</span>
+                  <div className="nludo-roster-header">
+                    <div className="nludo-roster-left">
+                      <span
+                        className="nludo-player-dot"
+                        style={{ background: def.colorHex, boxShadow: `0 0 10px ${def.colorHex}` }}
+                      />
+                      <span className="nludo-roster-name">{def.label}</span>
+                    </div>
                     <span className={`nludo-roster-badge ${isBot ? 'bot' : 'human'}`}>
                       {isBot ? '🤖 Bot' : '👤 Human'}
                     </span>
                   </div>
+
+                  {!isBot ? (
+                    <div className="nludo-roster-input-wrap" onClick={e => e.stopPropagation()}>
+                      <input
+                        type="text"
+                        className="nludo-roster-input"
+                        placeholder={`Enter name (default: ${def.label})`}
+                        value={playerNames[idx] || ''}
+                        onChange={(e) => setPlayerNames(prev => ({ ...prev, [idx]: e.target.value }))}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        maxLength={14}
+                        aria-label={`${def.label} player name`}
+                      />
+                    </div>
+                  ) : (
+                    <div className="nludo-roster-bot-hint">AI Controlled • Tap to make Human</div>
+                  )}
                 </div>
               );
             })}
@@ -511,12 +541,16 @@ function Lobby({ onStart }) {
           type="button"
           className="nludo-start-btn"
           onClick={() => {
-            const playersConfig = activeIds.map((pid, idx) => ({
-              id: pid,
-              label: PLAYER_DEFS[pid].label,
-              isBot: !!slotIsBot[idx],
-              difficulty,
-            }));
+            const playersConfig = activeIds.map((pid, idx) => {
+              const isBot = !!slotIsBot[idx];
+              const customName = !isBot && playerNames[idx]?.trim();
+              return {
+                id: pid,
+                label: customName || PLAYER_DEFS[pid].label,
+                isBot,
+                difficulty,
+              };
+            });
             onStart({ playersConfig, mode, difficulty, playerCount });
           }}
         >
@@ -692,10 +726,10 @@ function DiceFace({ value, rolling, colorHex, glowColor, onClick, interactive, i
 // TOKEN COMPONENT
 // ============================================================
 
-function TokenCircle({ pid, ti, cx, cy, r = 15, isMovable, onTokenClick }) {
+function TokenCircle({ pid, ti, cx, cy, r = 15, isMovable, onTokenClick, playerName }) {
   const color = PLAYER_DEFS[pid]?.colorHex || '#fff';
   const movable = isMovable(pid, ti);
-  const hitRadius = Math.max(r + 15, 29);
+  const hitRadius = Math.max(r + 14, 26);
 
   return (
     <g
@@ -708,16 +742,22 @@ function TokenCircle({ pid, ti, cx, cy, r = 15, isMovable, onTokenClick }) {
       }}
       role={movable ? 'button' : undefined}
       tabIndex={movable ? 0 : undefined}
-      aria-label={movable ? `Move ${PLAYER_DEFS[pid]?.label || pid} token ${ti + 1}` : undefined}
-      style={{ cursor: movable ? 'pointer' : 'default', touchAction: 'manipulation' }}
+      aria-label={movable ? `Move ${playerName || PLAYER_DEFS[pid]?.label || pid} token ${ti + 1}` : undefined}
+      style={{
+        cursor: movable ? 'pointer' : 'default',
+        touchAction: 'manipulation',
+        pointerEvents: movable ? 'auto' : 'none',
+      }}
     >
-      {/* Generous touch/click hit area for effortless mobile finger tapping */}
-      <circle cx={cx} cy={cy} r={hitRadius} fill="transparent" pointerEvents="all" />
+      {/* Generous touch/click hit area ONLY for movable tokens so non-movable tokens never intercept touches */}
+      {movable && (
+        <circle cx={cx} cy={cy} r={hitRadius} fill="transparent" pointerEvents="all" />
+      )}
 
       {movable && (
         <>
-          <circle cx={cx} cy={cy} r={r + 8} fill={color} opacity="0.38" className="nludo-token-pulse" />
-          <circle cx={cx} cy={cy} r={r + 4} fill="none" stroke="#ffffff" strokeWidth="2.2" strokeDasharray="4 2" className="nludo-token-ring" />
+          <circle cx={cx} cy={cy} r={r + 8} fill={color} opacity="0.38" className="nludo-token-pulse" style={{ pointerEvents: 'none' }} />
+          <circle cx={cx} cy={cy} r={r + 4} fill="none" stroke="#ffffff" strokeWidth="2.2" strokeDasharray="4 2" className="nludo-token-ring" style={{ pointerEvents: 'none' }} />
         </>
       )}
 
@@ -733,10 +773,11 @@ function TokenCircle({ pid, ti, cx, cy, r = 15, isMovable, onTokenClick }) {
           transform: movable ? 'scale(1.15)' : 'scale(1)',
           transformOrigin: `${cx}px ${cy}px`,
           transition: 'transform 0.15s ease, filter 0.15s ease',
+          pointerEvents: movable ? 'auto' : 'none',
         }}
       />
 
-      <circle cx={cx - r * 0.28} cy={cy - r * 0.28} r={r * 0.32} fill="rgba(255,255,255,0.5)" />
+      <circle cx={cx - r * 0.28} cy={cy - r * 0.28} r={r * 0.32} fill="rgba(255,255,255,0.5)" style={{ pointerEvents: 'none' }} />
 
       <text
         x={cx}
@@ -833,10 +874,16 @@ function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick, p
                 ★
               </text>
             )}
-            {tokensHere.map(({ playerId, tokenIndex }, ti) => {
+            {/* Sort so that blinking/highlighting movable tokens are rendered on top */}
+            {[...tokensHere].sort((a, b) => {
+              const aMov = isMovable(a.playerId, a.tokenIndex) ? 1 : 0;
+              const bMov = isMovable(b.playerId, b.tokenIndex) ? 1 : 0;
+              return aMov - bMov;
+            }).map(({ playerId, tokenIndex }, ti) => {
               const spread = tokensHere.length > 1;
               const offsetX = spread ? ((ti % 2) * 18 - 9) : 0;
               const offsetY = spread ? (Math.floor(ti / 2) * 18 - 4) : 0;
+              const playerObj = players.find(p => p.id === playerId);
               return (
                 <TokenCircle
                   key={`${playerId}-${tokenIndex}`}
@@ -847,6 +894,7 @@ function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick, p
                   r={spread ? 11 : 15}
                   isMovable={isMovable}
                   onTokenClick={onTokenClick}
+                  playerName={playerObj?.label}
                 />
               );
             })}
@@ -869,18 +917,26 @@ function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick, p
                   {HOME_ARROWS[pid]}
                 </text>
               )}
-              {tokensHere.map(({ playerId, tokenIndex }) => (
-                <TokenCircle
-                  key={`${playerId}-${tokenIndex}`}
-                  pid={playerId}
-                  ti={tokenIndex}
-                  cx={x + CELL_4/2}
-                  cy={y + CELL_4/2}
-                  r={15}
-                  isMovable={isMovable}
-                  onTokenClick={onTokenClick}
-                />
-              ))}
+              {[...tokensHere].sort((a, b) => {
+                const aMov = isMovable(a.playerId, a.tokenIndex) ? 1 : 0;
+                const bMov = isMovable(b.playerId, b.tokenIndex) ? 1 : 0;
+                return aMov - bMov;
+              }).map(({ playerId, tokenIndex }) => {
+                const playerObj = players.find(p => p.id === playerId);
+                return (
+                  <TokenCircle
+                    key={`${playerId}-${tokenIndex}`}
+                    pid={playerId}
+                    ti={tokenIndex}
+                    cx={x + CELL_4/2}
+                    cy={y + CELL_4/2}
+                    r={15}
+                    isMovable={isMovable}
+                    onTokenClick={onTokenClick}
+                    playerName={playerObj?.label}
+                  />
+                );
+              })}
             </g>
           );
         });
@@ -909,6 +965,7 @@ function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick, p
                   r={16}
                   isMovable={isMovable}
                   onTokenClick={onTokenClick}
+                  playerName={playerObj?.label}
                 />
               )}
             </g>
@@ -931,11 +988,15 @@ function Board4Player({ players, currentPlayerId, movableTokens, onTokenClick, p
         { pid: 'blue', x: 12*CELL_4, y: 5.3*CELL_4 },
         { pid: 'yellow', x: 12*CELL_4, y: 9.7*CELL_4 },
         { pid: 'green', x: 3*CELL_4, y: 9.7*CELL_4 },
-      ].map(({ pid, x, y }) => (
-        <text key={pid} x={x} y={y} textAnchor="middle" fontSize="11" fontWeight="900" letterSpacing="0.12em" fill={PLAYER_DEFS[pid].colorHex} opacity="0.8" style={{ textTransform: 'uppercase' }}>
-          {pid.toUpperCase()}
-        </text>
-      ))}
+      ].map(({ pid, x, y }) => {
+        const pObj = players.find(p => p.id === pid);
+        const displayLabel = pObj?.label || pid;
+        return (
+          <text key={pid} x={x} y={y} textAnchor="middle" fontSize="11" fontWeight="900" letterSpacing="0.12em" fill={PLAYER_DEFS[pid].colorHex} opacity="0.8" style={{ textTransform: 'uppercase' }}>
+            {displayLabel.slice(0, 8).toUpperCase()}
+          </text>
+        );
+      })}
 
       {/* Finished badges */}
       {players.map(p => {
@@ -1168,7 +1229,7 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                 opacity={isActive ? 0.95 : 0.4}
                 style={{ textTransform: 'uppercase' }}
               >
-                {def.label.toUpperCase()}
+                {(pObj?.label || def.label).slice(0, 8).toUpperCase()}
               </text>
             </g>
 
@@ -1195,6 +1256,7 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                       r={16}
                       isMovable={isMovable}
                       onTokenClick={onTokenClick}
+                      playerName={pObj?.label}
                     />
                   )}
                 </g>
@@ -1253,10 +1315,16 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                 </text>
               )}
             </g>
-            {tokensHere.map(({ playerId, tokenIndex }, ti) => {
+            {/* Sort so that blinking/highlighting movable tokens are rendered on top */}
+            {[...tokensHere].sort((a, b) => {
+              const aMov = isMovable(a.playerId, a.tokenIndex) ? 1 : 0;
+              const bMov = isMovable(b.playerId, b.tokenIndex) ? 1 : 0;
+              return aMov - bMov;
+            }).map(({ playerId, tokenIndex }, ti) => {
               const spread = tokensHere.length > 1;
               const offsetX = spread ? ((ti % 2) * 14 - 7) : 0;
               const offsetY = spread ? (Math.floor(ti / 2) * 14 - 7) : 0;
+              const playerObj = players.find(p => p.id === playerId);
               return (
                 <TokenCircle
                   key={`${playerId}-${tokenIndex}`}
@@ -1267,6 +1335,7 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                   r={spread ? 12 : 16}
                   isMovable={isMovable}
                   onTokenClick={onTokenClick}
+                  playerName={playerObj?.label}
                 />
               );
             })}
@@ -1324,18 +1393,26 @@ function Board8PlayerOctagon({ players, currentPlayerId, movableTokens, onTokenC
                   </text>
                 )}
               </g>
-              {tokensHere.map(({ playerId, tokenIndex }) => (
-                <TokenCircle
-                  key={`${playerId}-${tokenIndex}`}
-                  pid={playerId}
-                  ti={tokenIndex}
-                  cx={pt.x}
-                  cy={pt.y}
-                  r={16}
-                  isMovable={isMovable}
-                  onTokenClick={onTokenClick}
-                />
-              ))}
+              {[...tokensHere].sort((a, b) => {
+                const aMov = isMovable(a.playerId, a.tokenIndex) ? 1 : 0;
+                const bMov = isMovable(b.playerId, b.tokenIndex) ? 1 : 0;
+                return aMov - bMov;
+              }).map(({ playerId, tokenIndex }) => {
+                const playerObj = players.find(p => p.id === playerId);
+                return (
+                  <TokenCircle
+                    key={`${playerId}-${tokenIndex}`}
+                    pid={playerId}
+                    ti={tokenIndex}
+                    cx={pt.x}
+                    cy={pt.y}
+                    r={16}
+                    isMovable={isMovable}
+                    onTokenClick={onTokenClick}
+                    playerName={playerObj?.label}
+                  />
+                );
+              })}
             </g>
           );
         });
